@@ -42,12 +42,22 @@ jobs:
         contains(github.event.comment.body, '/ping')
     steps:
 
-      # ---------------------------------------------------------------------------------------
-      #   Add Label to accepted PR
-      # ---------------------------------------------------------------------------------------
+        # ---------------------------------------------------------------------------------------
+        #   Job > Initialize > Checkout
+        # ---------------------------------------------------------------------------------------
 
-      - name: "🏷️ Notify Developer › ${{ env.ASSIGN_USER }}"
-        env:
-          CONTACT: ${{ secrets.EMAIL_TO }}
-        run: |
-            echo "My message" | mail -s "Github Notification" ${{ secrets.EMAIL_TO }}
+        - name: "🌳 Apt Install"
+          id: task_initialize_apt_install
+          run: |
+                sudo apt-get update
+                sudo apt-get install -y mailutils
+
+        # ---------------------------------------------------------------------------------------
+        #   Add Label to accepted PR
+        # ---------------------------------------------------------------------------------------
+
+        - name: "🏷️ Notify Developer › ${{ env.ASSIGN_USER }}"
+          env:
+                CONTACT: ${{ secrets.EMAIL_TO }}
+          run: |
+                echo "My message" | mail -s "Github Notification" ${{ secrets.EMAIL_TO }}
