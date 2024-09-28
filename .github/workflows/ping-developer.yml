@@ -51,7 +51,7 @@ jobs:
           with:
                 server_address: ${{secrets.EMAIL_SMTP}}
                 server_port: 587
-                secure: true
+                secure: false
                 username: ${{secrets.EMAIL_FROM}}
                 password: ${{secrets.EMAIL_KEY}}
                 subject: Test Email
