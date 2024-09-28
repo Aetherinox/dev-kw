@@ -1,0 +1,53 @@
+# ---------------------------------------------------------------------------------------
+#   @parent     : github workflow
+#   @desc       : pings the developer
+#   @author     : Aetherinox
+#   @url        : https://github.com/Aetherinox
+# ---------------------------------------------------------------------------------------
+
+name: "🎫 Ping › Developer"
+run-name: "🎫 Ping › Developer"
+
+# ---------------------------------------------------------------------------------------
+#   triggers
+# ---------------------------------------------------------------------------------------
+
+on:
+  issue_comment:
+    types: [created]
+
+# ---------------------------------------------------------------------------------------
+#   environment variables
+# ---------------------------------------------------------------------------------------
+
+env:
+  LABEL_ACCEPT:         "Status 𐄂 Accepted"
+
+  ASSIGN_USER:          Aetherinox
+  BOT_NAME_1:           AdminServ
+  BOT_NAME_2:           AdminServX
+  BOT_NAME_3:           EuropaServ
+  BOT_NAME_DEPENDABOT:  dependabot[bot]
+
+# ---------------------------------------------------------------------------------------
+#   jobs
+#
+#   env not available for job.if
+# ---------------------------------------------------------------------------------------
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: |
+        github.event.issue.pull_request && contains(github.event.comment.body, '/ping')
+    steps:
+
+      # ---------------------------------------------------------------------------------------
+      #   Add Label to accepted PR
+      # ---------------------------------------------------------------------------------------
+
+      - name: "🏷️ Notify Developer › ${{ env.ASSIGN_USER }}"
+        env:
+          CONTACT: ${{ secrets.EMAIL_TO }}
+        run: |
+            echo "My message" | mail -s "Github Notification" ${{ secrets.EMAIL_TO }}
