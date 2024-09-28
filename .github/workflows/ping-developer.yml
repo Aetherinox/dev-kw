@@ -61,7 +61,7 @@ jobs:
                 # Server port, default 25:
                 server_port: 465
                 # Optional whether this connection use TLS (default is true if server_port is 465)
-                secure: false
+                secure: true
                 # Optional (recommended) mail server username:
                 username: ${{secrets.EMAIL_FROM}}
                 # Optional (recommended) mail server password:
