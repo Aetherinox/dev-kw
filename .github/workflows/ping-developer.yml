@@ -91,5 +91,3 @@ jobs:
         - name: "🏷️ Notify Developer › ${{ env.ASSIGN_USER }}"
           env:
                 CONTACT: ${{ secrets.EMAIL_TO }}
-          run: |
-                echo "My message" | mail -s "Github Notification" ${{ secrets.EMAIL_TO }}
