@@ -64,6 +64,6 @@ jobs:
                         this is a text email
                     </body>
                   </html>
-                ignore_cert: false
+                ignore_cert: true
                 convert_markdown: true
                 priority: normal
