@@ -107,8 +107,6 @@ jobs:
         name: >-
           🆗 Successful Deployment
         runs-on: ubuntu-latest
-        environment:
-            name: Orion
         steps:
 
             # #
