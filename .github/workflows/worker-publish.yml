@@ -160,4 +160,4 @@ jobs:
                   --header "Authorization: Bearer ${{ secrets.CF_TOKEN }}" \
                   --header "Accept: application/json" \
                   --header "Content-Type: application/json" \
-                  --data @- | jq -r '.data.viewer.accounts[0].workersInvocationsAdaptive[0] | .sum.errors, .sum.requests, .sum.subrequests' | tr \\n ' ')
+                  --data @-)
