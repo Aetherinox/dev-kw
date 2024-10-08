@@ -42,8 +42,10 @@ jobs:
         runs-on: ubuntu-latest
         if: contains(github.event.comment.body, '/accept') && github.event.comment.user.login == github.event.repository.owner.login
         permissions:
-            contents: write
-            pull-requests: write
+            contents: write-all
+            pull-requests: read
+            statuses: read
+            checks: read
         steps:
 
             # #
