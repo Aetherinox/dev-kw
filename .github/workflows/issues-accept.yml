@@ -40,8 +40,10 @@ jobs:
 
     deploy:
         runs-on: ubuntu-latest
-        if: |
-            ${{ contains(github.event.comment.body, '/reeeeeeeee') && github.event.comment.user.login == 'Aetherinox' }}
+        if: ${{ github.event.comment.body == '!testing' && github.event.comment.user.login == 'aetherinox' }}
+        permissions:
+            contents: write
+            pull-requests: write
         steps:
 
             # #
