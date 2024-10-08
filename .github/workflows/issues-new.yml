@@ -1,8 +1,9 @@
 # #
-#   @parent     : github workflow
-#   @desc       : allows you to auto assign labels to new issues and pull requests
-#   @author     : Aetherinox
-#   @url        : https://github.com/Aetherinox
+#   @type           github workflow
+#   @desc           searches a new issues title and body for certain keywords and assigns a label
+#                       sets the assignee for the issue to the repository owner
+#   @author         Aetherinox
+#   @url            https://github.com/Aetherinox
 #
 #   requires the following labels to be created in your repo:
 #     - bug
