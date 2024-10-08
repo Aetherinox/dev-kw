@@ -40,12 +40,9 @@ jobs:
 
     deploy:
         runs-on: ubuntu-latest
-        if: contains(github.event.comment.body, '/accept') && github.event.comment.user.login == github.event.repository.owner.login
-        permissions:
-            contents: write-all
-            pull-requests: read
-            statuses: read
-            checks: read
+        if: github.event.issue.pull_request && contains(github.event.comment.body, '/accept') && github.event.comment.user.login == ${{ github.repository_owner }}
+        environment:
+            name: Orion
         steps:
 
             # #
@@ -56,7 +53,7 @@ jobs:
                   🏷️ Assign Label › ${{ env.LABEL_ACCEPT }}
               run: gh issue edit "$NUMBER" --add-label "$LABELS"
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.SELF_TOKEN_CL }}
                   GH_REPO: ${{ github.repository }}
                   NUMBER: ${{ github.event.issue.number }}
                   LABELS: ${{ env.LABEL_ACCEPT }}
@@ -69,7 +66,7 @@ jobs:
                   🏷️ Assign Assignee › ${{ github.repository_owner }}
               run: gh issue edit "$NUMBER" --add-assignee "$ASSIGNEE"
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.SELF_TOKEN_CL }}
                   GH_REPO: ${{ github.repository }}
                   NUMBER: ${{ github.event.issue.number }}
                   ASSIGNEE: ${{ github.repository_owner }}
