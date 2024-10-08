@@ -128,11 +128,10 @@ jobs:
               id: task_cloudflare_project_check
               shell: bash
               run: |
-                  set -o pipefail
                   yesturday=$(date --utc -d '-1 day' '+%FT%TZ')
                   now=$(date --utc '+%FT%TZ')
 
-                  read i_err i_req i_subreq < <(echo "{ \"query\":
+                  JSON=$(echo "{ \"query\":
                     \"query GetWorkersAnalytics(\$accountTag: string, \$datetimeStart: string, \$scriptName: string) {
                       viewer {
                         accounts(filter: {accountTag: \$accountTag}) {
@@ -162,3 +161,26 @@ jobs:
                   --header "Accept: application/json" \
                   --header "Content-Type: application/json" \
                   --data @-)
+
+                  ERR=$(echo $JSON | jq -r ".data.viewer.accounts[0].workersInvocationsAdaptive[0].sum.errors")
+                  REQ=$(echo $JSON | jq -r ".data.viewer.accounts[0].workersInvocationsAdaptive[0].sum.requests")
+                  SUBREQ=$(echo $JSON | jq -r ".data.viewer.accounts[0].workersInvocationsAdaptive[0].sum.subrequests")
+
+                  echo "ENV_ERR=$ERR" >> $GITHUB_OUTPUT
+                  echo "ENV_REQ=$REQ" >> $GITHUB_OUTPUT
+                  echo "ENV_SUBREQ=$SUBREQ" >> $GITHUB_OUTPUT
+
+            # #
+            #   Job > Complete > Summary of publish
+            # #
+
+            - name: "🆗 Completed: ${{ env.NOW }}"
+              id: task_complete_summary
+              run: |
+                  echo ""
+                  echo ""
+                  echo "| File                            | Result                  |" >> $GITHUB_STEP_SUMMARY
+                  echo "| ------------------------------- | ----------------------- |" >> $GITHUB_STEP_SUMMARY
+                  echo "| **ENV_ERR**      | ${{ env.ENV_ERR }} |" >> $GITHUB_STEP_SUMMARY
+                  echo "| **ENV_REQ**                        | ${{ env.ENV_REQ }} |" >> $GITHUB_STEP_SUMMARY
+                  echo "| **ENV_SUBREQ**                        | ${{ env.ENV_SUBREQ }} |" >> $GITHUB_STEP_SUMMARY
