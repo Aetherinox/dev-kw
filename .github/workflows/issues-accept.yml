@@ -40,7 +40,7 @@ jobs:
 
     deploy:
         runs-on: ubuntu-latest
-        if: contains(ithub.event.comment.body, '/accept') && ${{ github.event.comment.user.login == github.event.repository.owner.login }}
+        if: contains(ithub.event.comment.body, '/accept') && github.event.comment.user.login == github.event.repository.owner.login
         permissions:
             contents: write
             pull-requests: write
