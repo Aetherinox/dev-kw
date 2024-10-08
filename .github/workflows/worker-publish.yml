@@ -128,6 +128,7 @@ jobs:
               id: task_cloudflare_project_check
               shell: bash
               run: |
+                  set -o pipefail
                   yesturday=$(date --utc -d '-1 day' '+%FT%TZ')
                   now=$(date --utc '+%FT%TZ')
 
