@@ -170,9 +170,9 @@ jobs:
                   echo $REQ
                   echo $SUBREQ
 
-                  echo "ENV_ERR=$ERR" >> $GITHUB_OUTPUT
-                  echo "ENV_REQ=$REQ" >> $GITHUB_OUTPUT
-                  echo "ENV_SUBREQ=$SUBREQ" >> $GITHUB_OUTPUT
+                  echo "ENV_ERR=$ERR" >> $GITHUB_ENV
+                  echo "ENV_REQ=$REQ" >> $GITHUB_ENV
+                  echo "ENV_SUBREQ=$SUBREQ" >> $GITHUB_ENV
 
             # #
             #   Job > Complete > Summary of publish
