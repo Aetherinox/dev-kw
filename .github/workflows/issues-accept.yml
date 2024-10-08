@@ -40,7 +40,7 @@ jobs:
 
     deploy:
         runs-on: ubuntu-latest
-        if: ${{ github.event.comment.body == '!testing' && github.event.comment.user.login == ${{ github.repository_owner }} }}
+        if: ${{ github.event.comment.body == '!testing' && github.event.comment.user.login == github.repository_owner }} }}
         permissions:
             contents: write
             pull-requests: write
