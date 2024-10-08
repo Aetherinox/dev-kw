@@ -43,13 +43,6 @@ jobs:
         runs-on: ubuntu-latest
         steps:
 
-            - name: >-
-                  debug
-              run: |
-                    ${{ github.repository_owner }}
-                    ${{ github.event.comment.user.login }}
-
-
             # #
             #   Add Label to accepted PR
             # #
