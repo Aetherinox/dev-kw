@@ -40,7 +40,8 @@ jobs:
 
     deploy:
         runs-on: ubuntu-latest
-        if: github.event.issue.pull_request && contains(github.event.comment.body, '/accept') && github.event.comment.user.login == ${{ github.repository_owner }}
+        if: |
+            contains(github.event.comment.body, '/accept') && github.event.comment.user.login == ${{ github.repository_owner }}
         steps:
 
             # #
