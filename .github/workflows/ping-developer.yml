@@ -44,14 +44,23 @@ jobs:
 
         # ---------------------------------------------------------------------------------------
         #   Add Label to accepted PR
+        #
+        #   port 465
+        #       server_port: 465
+        #       secure: true
+        #       ignore_cert: false
+        #
+        #   port 587
+        #       server_port: 587
+        #       secure: false
         # ---------------------------------------------------------------------------------------
 
         - name: Send mail
           uses: dawidd6/action-send-mail@v3
           with:
                 server_address: ${{secrets.EMAIL_SMTP}}
-                server_port: 587
-                secure: false
+                server_port: 465
+                secure: true
                 username: ${{secrets.EMAIL_FROM}}
                 password: ${{secrets.EMAIL_KEY}}
                 subject: Test Email

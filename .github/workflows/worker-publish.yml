@@ -1,0 +1,189 @@
+# #
+#   @parent     : github workflow
+#   @desc       : publish release to github
+#                 version of release fetched from /src/package.json.
+#                 ensure `cloudflare/wrangler-action@v3` worker uses env variable "production"
+#   @author     : Aetherinox
+#   @url        : https://github.com/Aetherinox
+# #
+
+name: "☁️ Worker › Release"
+run-name: "☁️ Worker › Release"
+
+# #
+#   triggers
+# #
+
+on:
+    workflow_dispatch:
+        inputs:
+
+          # ---------------------------------------------------------------------------------------
+          #   Name of the plugin to use when creating the release zip filename
+          #     e.g: searxico-cf-worker-v1.0.0.zip
+          # ---------------------------------------------------------------------------------------
+
+          PLUGIN_NAME:
+              description:  "📦 Name of App"
+              required:     true
+              default:      'searxico'
+              type:         string
+
+          # ---------------------------------------------------------------------------------------
+          #   ENABLE:   the changelog generated in releases tab will only display single commits.
+          #   DISABLE:  the changelog shows pull requests completed based on their labels
+          # ---------------------------------------------------------------------------------------
+
+          CHANGELOG_MODE_COMMIT:
+              description:  "📑 Use Commits Instead of PRs"
+              required:     true
+              default:      true
+              type:         boolean
+
+          # ---------------------------------------------------------------------------------------
+          #   ENABLE:   Will show all types of commits, including uncategorized
+          #   DISABLE:  WIll only show actions that have been categorized using the format
+          #                type(scope): description
+          #                type: description
+          # ---------------------------------------------------------------------------------------
+
+          SHOW_UNCATEGORIZED:
+              description:  "🗂️ Show Uncategorized Commits"
+              required:     true
+              default:      false
+              type:         boolean
+
+          # ---------------------------------------------------------------------------------------
+          #   ENABLE:   released version will be marked as pre-release
+          #   DISABLE:  release version will be marked as stable / normal release
+          # ---------------------------------------------------------------------------------------
+
+          PRERELEASE:
+              description:  "🧪 Build RC (Pre-release)"
+              required:     true
+              default:      false
+              type:         boolean
+
+          # ---------------------------------------------------------------------------------------
+          #   Release Candidate version number
+          #   this will be added to the end of your released app in the releases page.
+          #     e.g: searxico-cf-worker-v1.0.0-rc.1
+          # ---------------------------------------------------------------------------------------
+
+          VERSION_RC:
+              description:  "🧪 RC (Pre-release) Ver (searxico-cf-worker-rc.v1)"
+              required:     false
+              type:         string
+              default:      "1"
+
+# #
+#   environment variables
+# #
+
+env:
+    PLUGIN_NAME:            ${{ github.event.inputs.PLUGIN_NAME || 'searxico' }}
+    CHANGELOG_MODE_COMMIT:  true
+    SHOW_UNCATEGORIZED:     false
+    PRERELEASE:             false
+    VERSION_RC:             '1'
+    FOLDER_DIST:            'dist'
+    ASSIGN_USER:            Aetherinox
+    BOT_NAME_1:             AdminServ
+    BOT_NAME_2:             AdminServX
+    BOT_NAME_3:             EuropaServ
+    BOT_NAME_DEPENDABOT:    dependabot[bot]
+
+# #
+#   jobs
+# #
+
+jobs:
+
+    # #
+    #   JOB > COMPLETE
+    # #
+
+    job-complete:
+        name: >-
+          🆗 Successful Deployment
+        runs-on: ubuntu-latest
+        environment:
+            name: Orion
+        steps:
+
+            # #
+            #   artifacts > download
+            # #
+
+            - name: "📁 Download › Saved Artifacts"
+              uses: actions/download-artifact@v4
+
+            # #
+            #   CLOUDFLARE > CHECK PROJECT
+            #
+            #   this step checks to see if your project already exists on cloudflare
+            #   today        date --utc +%FT%TZ
+            #   yesterday    date --utc -d '-1 day' '+%FT%TZ'
+            # #
+
+            - name: "☁️ CF › Check Project"
+              id: task_cloudflare_project_check
+              shell: bash
+              run: |
+                  yesturday=$(date --utc -d '-1 day' '+%FT%TZ')
+                  now=$(date --utc +%FT%TZ)
+
+                  env=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/workers/scripts/searxico/settings/" \
+                    -H "Authorization: Bearer ${{ secrets.CF_TOKEN }}" \
+                    -H "Content-Type:application/json" | jq -r '.result.bindings[0].text')
+                  echo "ENV_VAR=$env" >> $GITHUB_OUTPUT
+
+                  read i_err i_req i_subreq < <(echo "{ \"query\":
+                    \"query GetWorkersAnalytics(\$accountTag: string, \$datetimeStart: string, \$scriptName: string) {
+                      viewer {
+                        accounts(filter: {accountTag: \$accountTag}) {
+                          workersInvocationsAdaptive(limit: 1000, filter: {
+                            scriptName: \$scriptName,
+                            datetime_geq: \$datetimeStart,
+                            datetime_leq: \$datetimeEnd
+                          }) {
+                            sum {
+                              subrequests
+                              requests
+                              errors
+                            }
+                          }
+                        }
+                      }
+                    }\",
+                    \"variables\": {
+                      \"accountTag\": \"${{ secrets.CF_ACCOUNT_ID }}\",
+                      \"datetimeStart\": \"$yesturday\",
+                      \"datetimeEnd\": \"$now\",
+                      \"scriptName\": \"searxico\"
+                    }
+                  }" | curl --silent \
+                  https://api.cloudflare.com/client/v4/graphql \
+                  --header "Authorization: Bearer ${{ secrets.CF_TOKEN }}" \
+                  --header "Accept: application/json" \
+                  --header "Content-Type: application/json" \
+                  --data @- | jq -r '.data.viewer.accounts[0].workersInvocationsAdaptive[0] | .sum.errors, .sum.requests, .sum.subrequests' | tr \\n ' ')
+
+                  echo "ENV_ERR=$i_err" >> $GITHUB_OUTPUT
+                  echo "ENV_REQ=$i_req" >> $GITHUB_OUTPUT
+                  echo "ENV_SUBREQ=$i_subreq" >> $GITHUB_OUTPUT
+
+            # #
+            #   Job > Complete > Summary of publish
+            # #
+
+            - name: "🆗 Completed: ${{ env.NOW }}"
+              id: task_complete_summary
+              run: |
+                  echo ""
+                  echo ""
+                  echo "| File                            | Result                  |" >> $GITHUB_STEP_SUMMARY
+                  echo "| ------------------------------- | ----------------------- |" >> $GITHUB_STEP_SUMMARY
+                  echo "| **ENV_ERR**      | ${{ env.ENV_ERR }} |" >> $GITHUB_STEP_SUMMARY
+                  echo "| **ENV_REQ**                        | ${{ env.ENV_REQ }} |" >> $GITHUB_STEP_SUMMARY
+                  echo "| **ENV_SUBREQ**                        | ${{ env.ENV_SUBREQ }} |" >> $GITHUB_STEP_SUMMARY
