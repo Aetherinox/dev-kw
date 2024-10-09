@@ -80,7 +80,7 @@ jobs:
                         <title>Title</title>
 
                         <style>
-                        .bgimg {
+                        body {
                         background: url('https://images.unsplash.com/photo-1541422348463-9bc715520974?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZGFyayUyMG1vdW50YWlufGVufDB8fDB8fHww');
                         font-size:9pt;
                         margin:0;
