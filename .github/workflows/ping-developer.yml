@@ -64,6 +64,7 @@ jobs:
                     to: ${{secrets.EMAIL_TO}}
                     from: ${{secrets.EMAIL_FROM}}
                     html_body: |
+                        <!DOCTYPE html>
                         <html>
                             <head>
                                 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
