@@ -80,11 +80,11 @@ jobs:
                         <title>Title</title>
 
                         <style>
-                        .background {
+                        .bgimage {
                         font-size: 9pt;
                         margin:0;
                         padding:0;
-                        background-color: #616161;
+                        background-color: #616161 !important;
                         }
                         .background-overlay {
                         background-color: #1111119f;
@@ -100,7 +100,7 @@ jobs:
                         </style>
                         </head>
 
-                        <body class='background'>
+                        <body class='bgimage'>
                         <div class='background-overlay'>
                         <center>
                         <div class="background-header">
