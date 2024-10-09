@@ -80,8 +80,11 @@ jobs:
                         <title>Title</title>
 
                         <style>
-                        .background {
+                        .bgimg {
                         background: url('https://images.unsplash.com/photo-1541422348463-9bc715520974?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZGFyayUyMG1vdW50YWlufGVufDB8fDB8fHww');
+                        font-size:9pt;
+                        margin:0;
+                        padding:0;
                         }
                         .background-overlay {
                         background-color: #1111119f;
@@ -97,15 +100,15 @@ jobs:
                         </style>
                         </head>
 
-                        <body class='background' style="font-size:9pt;margin:0;padding:0;background-color:#292929;">
-                        <div class='background-overlay'>
+                        <body class="bgimg">
+                        <div class="background-overlay">
                         <center>
                         <div class="background-header">
                         <a href="https://github.com/${{ github.repository }}"><img style="height:80px;padding-top:10px;" src="https://cdn0.iconfinder.com/data/icons/shift-logotypes/32/Github-512.png"></a>
                         </div>
                         </center>
 
-                        <div style="font-size:9pt;padding: 20px;color:#FFF;"">
+                        <div style="font-size:9pt;padding: 20px;color:#FFF;">
                         <h3><span style="font-size:9pt;color:#cc6613;">[Github]</span> <span style="font-size:9pt;color:#FFF;">Dear ${{github.repository_owner}},</span></h3>
                         <p style="font-size:9pt;color:#FFF;"><br />You have received a ping notification from <a href="https://github.com/${{ github.repository }}">${{ github.repository }}</a> by <a href="https://github.com/${{ github.event.comment.user.login }}">${{ github.event.comment.user.login }}</a>.</p>
                         <br>
