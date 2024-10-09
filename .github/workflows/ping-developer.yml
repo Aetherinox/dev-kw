@@ -97,7 +97,7 @@ jobs:
                         <body class='background' style="font-size:9pt;margin:0;padding:0;background-color:#292929;">
                         <div class='background-overlay'>
                         <center>
-                        <div class="background-header" style="background-color:#1b1b1b;padding:5px;height:70px;">
+                        <div style="background-color:#1b1b1b;padding:5px;height:70px;">
                         </div>
                         </center>
 
@@ -126,7 +126,7 @@ jobs:
                             <tr>
                                 <td
                                     style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Issue #</b></td>
-                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ github.event.number }}</td>
+                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ github.event.issue.number }}</td>
                             </tr>
                         </tbody>
                         </table>
