@@ -64,14 +64,79 @@ jobs:
                     to: ${{secrets.EMAIL_TO}}
                     from: ${{secrets.EMAIL_FROM}}
                     html_body: |
-                      <html>
-                        <body>
-                            Dear ${{github.repository_owner}},
+                        <html>
+                            <head>
+                                <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+                                <title>Github Notification</title>
 
-                            You have received a ping notification from ${{ github.event.repository.url }} by ${{ github.event.comment.user.login }}.
-                            - [${{ github.repository }}](https://github.com/${{ github.repository }}/issues/${{ inputs.instance_issue_number }})
-                        </body>
-                      </html>
+                                <style>
+                                    .background {
+                                        background: url('https://images.unsplash.com/photo-1541422348463-9bc715520974?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZGFyayUyMG1vdW50YWlufGVufDB8fDB8fHww');
+                                    }
+                                    .background-overlay {
+                                        background-color: #1111119f;
+                                    }
+                                    .background-header {
+                                        background: url('https://process.fs.teachablecdn.com/ADNupMnWyR7kCWRvm76Laz/resize=width:705/https://cdn.filestackcontent.com/MipxnobQRRS5h7raz9aM');
+                                        background-size: cover;
+                                        background-size: 50%;
+                                    }
+                                </style>
+                            </head>
+
+                            <body class='background' style="font-size:9pt;margin:0;padding:0;background-color:#292929;">
+                                <div class='background-overlay'>
+                                    <center>
+                                        <div class="background-header" style="background-color:#1b1b1b;padding:5px;height:70px;">
+                                        </div>
+                                    </center>
+
+                                    <div style="font-size:9pt;padding: 20px;color:#FFF;"">
+                                        <h3><span style="font-size:9pt;color:#cc6613;">[LFD]</span> <span style="font-size:9pt;color:#FFF;">Dear ${{github.repository_owner}},</span></h3>
+                                        <p style="font-size:9pt;color:#FFF;"><br />You have received a ping notification from <a href="https://github.com/${{ github.repository }}">${{ github.repository }}</a> by <a href="https://github.com/${{ github.event.comment.user.login }}">${{ github.event.comment.user.login }}</a>.</p>
+                                        <br>
+                                        <center>
+                                            <table cellspacing="0" cellpadding="0" width="40%" class="center">
+                                                <tbody>
+                                                    <tr>
+                                                        <td
+                                                            style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Repository</b></td>
+                                                        <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#1b1b1b;padding-left:10px;">${{ github.repository }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td
+                                                            style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Date</b></td>
+                                                        <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">[time]</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td
+                                                            style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>User</b></td>
+                                                        <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#1b1b1b;padding-left:10px;">${{ github.event.comment.user.login }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td
+                                                            style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Issue #</b></td>
+                                                        <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ inputs.instance_issue_number }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </center>
+
+                                        <br><br>
+
+                                        <p>&nbsp;</p>
+                                        <p style="color:#FFF;"><br /> ~ Github
+                                        </p>
+                                    </div>
+
+                                    <br /><br />
+
+                                    <div style="background-color:#1b1b1b;padding:5px;line-height:70px;height:70px;text-align:center;">
+                                        <span style="color:#FFF;">Copyright &copy; 2024 - Betelgeuse</span>
+                                    </div>
+                                </div>
+                            </body>
+                        </html>
                     ignore_cert: true
                     convert_markdown: true
                     priority: normal
