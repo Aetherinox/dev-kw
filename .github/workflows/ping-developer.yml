@@ -40,6 +40,15 @@ jobs:
         steps:
 
             # #
+            #   Job > Complete > Get publish timestamp
+            # #
+
+            - name: "🕛 Get Timestamp"
+              id: task_complete_timestamp_get
+              run: |
+                echo "NOW=$(date +'%m-%d-%Y %H:%M:%S')" >> $GITHUB_ENV
+
+            # #
             #   Add Label to accepted PR
             #
             #   port 465
@@ -107,7 +116,7 @@ jobs:
                             <tr>
                                 <td
                                     style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Date</b></td>
-                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">[time]</td>
+                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ env.NOW }}</td>
                             </tr>
                             <tr>
                                 <td
@@ -117,7 +126,7 @@ jobs:
                             <tr>
                                 <td
                                     style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Issue #</b></td>
-                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ inputs.instance_issue_number }}</td>
+                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ github.event.number }}</td>
                             </tr>
                         </tbody>
                         </table>
@@ -132,8 +141,8 @@ jobs:
 
                         <br /><br />
 
-                        <div style="background-color:#1b1b1b;padding:5px;line-height:70px;height:70px;text-align:center;">
-                        <span style="color:#FFF;">Copyright &copy; 2024 - Betelgeuse</span>
+                        <div style="background-color:#1b1b1b;padding:5px;line-height:70px;height:70px;text-align:center;font-size:8pt;">
+                        <span style="color:#FFF;font-size:8pt;">Copyright &copy; 2024 - Betelgeuse</span>
                         </div>
                         </div>
                         </body>
