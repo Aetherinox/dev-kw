@@ -1,78 +1,77 @@
-# ---------------------------------------------------------------------------------------
-#   @parent     : github workflow
-#   @desc       : pings the developer
-#   @author     : Aetherinox
-#   @url        : https://github.com/Aetherinox
-# ---------------------------------------------------------------------------------------
+# #
+#   @type               github workflow
+#   @desc               pings the developer
+#   @author             Aetherinox
+#   @url                https://github.com/Aetherinox
+# #
 
 name: "🎫 Ping › Developer"
 run-name: "🎫 Ping › Developer"
 
-# ---------------------------------------------------------------------------------------
+# #
 #   triggers
-# ---------------------------------------------------------------------------------------
+# #
 
 on:
-  issue_comment:
-    types: [created]
+    issue_comment:
+        types: [created]
 
-# ---------------------------------------------------------------------------------------
+# #
 #   environment variables
-# ---------------------------------------------------------------------------------------
+# #
 
 env:
-  LABEL_ACCEPT:         "Status 𐄂 Accepted"
+    BOT_NAME_1:           AdminServ
+    BOT_NAME_2:           AdminServX
+    BOT_NAME_3:           EuropaServ
+    BOT_NAME_DEPENDABOT:  dependabot[bot]
 
-  ASSIGN_USER:          Aetherinox
-  BOT_NAME_1:           AdminServ
-  BOT_NAME_2:           AdminServX
-  BOT_NAME_3:           EuropaServ
-  BOT_NAME_DEPENDABOT:  dependabot[bot]
-
-# ---------------------------------------------------------------------------------------
+# #
 #   jobs
 #
 #   env not available for job.if
-# ---------------------------------------------------------------------------------------
+# #
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    if: |
-        contains(github.event.comment.body, '/ping')
-    steps:
+    deploy:
+        runs-on: ubuntu-latest
+        if: |
+            contains(github.event.comment.body, '/ping')
+        steps:
 
-        # ---------------------------------------------------------------------------------------
-        #   Add Label to accepted PR
-        #
-        #   port 465
-        #       server_port: 465
-        #       secure: true
-        #       ignore_cert: false
-        #
-        #   port 587
-        #       server_port: 587
-        #       secure: false
-        # ---------------------------------------------------------------------------------------
+            # #
+            #   Add Label to accepted PR
+            #
+            #   port 465
+            #       server_port: 465
+            #       secure: true
+            #       ignore_cert: false
+            #
+            #   port 587
+            #       server_port: 587
+            #       secure: false
+            # #
 
-        - name: Send mail
-          uses: dawidd6/action-send-mail@v3
-          with:
-                server_address: ${{secrets.EMAIL_SMTP}}
-                server_port: 465
-                secure: true
-                username: ${{secrets.EMAIL_FROM}}
-                password: ${{secrets.EMAIL_KEY}}
-                subject: Test Email
-                to: ${{secrets.EMAIL_TO}}
-                from: ${{secrets.EMAIL_FROM}}
-                body: Build job of ${{github.repository}} completed successfully!
-                html_body: |
-                  <html>
-                    <body>
-                        this is a text email
-                    </body>
-                  </html>
-                ignore_cert: true
-                convert_markdown: true
-                priority: normal
+            - name: Send mail
+              uses: dawidd6/action-send-mail@v3
+              with:
+                    server_address: ${{secrets.EMAIL_SMTP}}
+                    server_port: 465
+                    secure: true
+                    username: ${{secrets.EMAIL_FROM}}
+                    password: ${{secrets.EMAIL_KEY}}
+                    subject: "Github: Ping notification from ${{ github.repository }}" 
+                    to: ${{secrets.EMAIL_TO}}
+                    from: ${{secrets.EMAIL_FROM}}
+                    html_body: |
+                      <html>
+                        <body>
+                            Dear ${{github.repository_owner}},
+
+                            You have received a ping notification from ${{ github.event.repository.url }} by ${{ github.event.comment.user.login }}.
+                            - [${{ github.repository }}](https://github.com/${{ github.repository }}/issues/${{ inputs.instance_issue_number }})
+                        </body>
+                      </html>
+                    ignore_cert: true
+                    convert_markdown: true
+                    priority: normal
