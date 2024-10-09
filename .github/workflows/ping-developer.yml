@@ -77,11 +77,15 @@ jobs:
                         <html>
                         <head>
                         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-                        <title>Github Notification</title>
+                        <title>Title</title>
 
                         <style>
                         .background {
                         background: url('https://images.unsplash.com/photo-1541422348463-9bc715520974?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZGFyayUyMG1vdW50YWlufGVufDB8fDB8fHww');
+                        font-size: 9pt;
+                        margin:0;
+                        padding:0;
+                        background-color:#454545;
                         }
                         .background-overlay {
                         background-color: #1111119f;
@@ -89,15 +93,18 @@ jobs:
                         .background-header {
                         background: url('https://process.fs.teachablecdn.com/ADNupMnWyR7kCWRvm76Laz/resize=width:705/https://cdn.filestackcontent.com/MipxnobQRRS5h7raz9aM');
                         background-size: cover;
-                        background-size: 50%;
+                        background-size: 100%;
+                        background-color:#1b1b1b;
+                        padding:5px;
+                        height:100px;
                         }
                         </style>
                         </head>
 
-                        <body class='background' style="font-size:9pt;margin:0;padding:0;background-color:#292929;">
+                        <body class='background'>
                         <div class='background-overlay'>
                         <center>
-                        <div style="background-color:#1b1b1b;padding:5px;height:70px;">
+                        <div class="background-header">
                         </div>
                         </center>
 
@@ -108,26 +115,22 @@ jobs:
                         <center>
                         <table cellspacing="0" cellpadding="0" width="40%" class="center">
                         <tbody>
-                            <tr>
-                                <td
-                                    style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Repository</b></td>
-                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#1b1b1b;padding-left:10px;">${{ github.repository }}</td>
-                            </tr>
-                            <tr>
-                                <td
-                                    style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Date</b></td>
-                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ env.NOW }}</td>
-                            </tr>
-                            <tr>
-                                <td
-                                    style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>User</b></td>
-                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#1b1b1b;padding-left:10px;">${{ github.event.comment.user.login }}</td>
-                            </tr>
-                            <tr>
-                                <td
-                                    style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Issue #</b></td>
-                                <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ github.event.issue.number }}</td>
-                            </tr>
+                        <tr>
+                        <td style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Repository</b></td>
+                        <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#1b1b1b;padding-left:10px;">${{ github.repository }}</td>
+                        </tr>
+                        <tr>
+                        <td style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Date</b></td>
+                        <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ env.NOW }}</td>
+                        </tr>
+                        <tr>
+                        <td style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>User</b></td>
+                        <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#1b1b1b;padding-left:10px;">${{ github.event.comment.user.login }}</td>
+                        </tr>
+                        <tr>
+                        <td style="font-size:9pt;background-color:#8a2138;color:#FFF;padding:6px;padding-left:10px;"><b>Issue #</b></td>
+                        <td style="font-size:9pt;padding-left:5px;color:#b3b3b3;background-color:#0f0f0f;padding-left:10px;">${{ github.event.issue.number }}</td>
+                        </tr>
                         </tbody>
                         </table>
                         </center>
@@ -141,7 +144,7 @@ jobs:
 
                         <br /><br />
 
-                        <div style="background-color:#1b1b1b;padding:5px;line-height:70px;height:70px;text-align:center;font-size:8pt;">
+                        <div style="background-color:#1b1b1b;padding:5px;line-height:70px;height:70px;text-align:center;">
                         <span style="color:#FFF;font-size:8pt;">Copyright &copy; 2024 - Betelgeuse</span>
                         </div>
                         </div>
