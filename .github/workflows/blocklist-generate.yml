@@ -1,0 +1,113 @@
+# #
+#   @usage              https://github.com/Aetherinox/csf-firewall
+#   @type               github workflow
+#   
+#   used in combination with .github/scripts/bl-download.sh
+#
+#   download AbuseIPDB ip list after list of ips are downloaded, merges them with a static list
+#   that is not updated as often which contains a list of long-term abusive ip addresses
+#   
+#   local test requires the same structure as the github workflow
+#       📁 .github
+#           📁 blocks
+#               📄 1.txt
+#           📁 scripts
+#               📄 bl-download.sh
+#           📁 workflows
+#               📄 blocklist-generate.yml
+# #
+
+name: "🧱 Blocklist › Generate"
+run-name: "🧱 Blocklist › Generate"
+
+# #
+#   triggers
+# #
+
+on:
+    workflow_dispatch:
+
+    schedule:
+        - cron: '0 */6 * * *'
+
+# #
+#   environment variables
+# #
+
+env:
+    BOT_NAME_1:           EuropaServ
+    BOT_NAME_DEPENDABOT:  dependabot[bot]
+
+# #
+#   jobs
+# #
+
+jobs:
+    build:
+        runs-on: ubuntu-22.04
+        timeout-minutes: 3
+        steps:
+
+            # #
+            #   Job > Start
+            # #
+
+            - name: "✅ Start"
+              id: task_build_start
+              run: |
+                echo "Starting blocklist build script"
+
+            # #
+            #   Job > Checkout
+            # #
+
+            - name: "☑️ Checkout"
+              id: task_build_checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+
+            # #
+            #   Generate > Master
+            # #
+
+            - name: "🧱 Generate › Master"
+              id: task_build_generate
+              run: |
+                # #
+                #   set permissions and run generator
+                # #
+
+                chmod +x ".github/scripts/bl-download.sh"
+                run_master=".github/scripts/bl-download.sh ${{ secrets.API_01_ENDPOINT }} ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }}"
+                eval "./$run_master"
+
+                # #
+                #   move blocklist
+                # #
+
+                mkdir -p blocklists/
+                mv ${{ secrets.API_01_FILE }} blocklists/
+
+            # #
+            #   Generate > Precommit
+            # #
+
+            - name: "📦 Pre-commit"
+              id: task_build_precommit
+              run: |
+                now=$(date '+%m/%d/%Y %H:%M')
+                commit_label="Sync" >> $GITHUB_ENV
+                commit_message="\`️️⚡️ $commit_label ⚡️\` \`$now\`" >> $GITHUB_ENV
+                echo "COMMIT_MESSAGE=$(echo $commit_message)" >> $GITHUB_ENV
+                echo "NOW=$(echo $now)" >> $GITHUB_ENV
+
+            # #
+            #   Generate > Commit
+            # #
+
+            - name: "📦 Commit"
+              id: task_build_commit
+              uses: stefanzweifel/git-auto-commit-action@v5
+              with:
+                commit_message: ${{ env.COMMIT_MESSAGE }}
