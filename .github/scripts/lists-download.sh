@@ -1,14 +1,12 @@
-#!/bin/bash
-PATH="/bin:/usr/bin:/sbin:/usr/sbin:/home/${USER}/bin"
-
 # #
 #   Downloads a list of ip addresses that should be added to block lists.
 #   This is used in combination with a Github workflow / action.
 # #
 
-s100_90d_file="abuseipdb-s100-90d.ipv4"
-s100_90d_url="https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/refs/heads/main/${s100_90d_file}"
-s100_90d_out="csf.deny"
+#!/bin/bash
+
+s100_90d_url="https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/refs/heads/main/abuseipdb-s100-90d.ipv4"
+s100_90d_file="csf.deny"
 NOW=`date -u`
 
 # #
@@ -20,32 +18,51 @@ NOW=`date -u`
 #   tput setf   [1-7]       : Set a foreground color
 # #
 
+BLACK=$(tput setaf 0)
+RED=$(tput setaf 1)
+ORANGE=$(tput setaf 208)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 156)
+LIME_YELLOW=$(tput setaf 190)
+POWDER_BLUE=$(tput setaf 153)
+BLUE=$(tput setaf 4)
+MAGENTA=$(tput setaf 5)
+CYAN=$(tput setaf 6)
+WHITE=$(tput setaf 7)
+GREYL=$(tput setaf 242)
+DEV=$(tput setaf 157)
+DEVGREY=$(tput setaf 243)
+FUCHSIA=$(tput setaf 198)
+PINK=$(tput setaf 200)
+BOLD=$(tput bold)
+NORMAL=$(tput sgr0)
+BLINK=$(tput blink)
+REVERSE=$(tput smso)
+UNDERLINE=$(tput smul)
+STRIKE="\e[9m"
+END="\e[0m"
 
 # #
 #   Func > Download List
 # #
-
-echo -e
 
 download_list()
 {
     local url=$1
     local file=$2
     
-    echo -e "Creating ${url}"
-
     curl ${url} -o ${file} >/dev/null 2>&1
     sed -i '/^#/d' ${file}
     sed -i 's/$/\t\t\#\ do\ not\ delete/' ${file}
 
-ed -s ${file} <<EOT
+ed -s 1.txt <<EOT
 1i
 # #
 #    ConfigServer Firewall (Deny List)
 #
-#    @url	        Aetherinox/csf-firewall
-#    @desc	        list of ip addresses actively trying to scan servers
-#    @last          ${NOW}
+#    @url          Aetherinox/csf-firewall
+#    @desc         list of ip addresses actively trying to scan servers
+#    @last         ${NOW}
 # #
 
 .
@@ -53,15 +70,30 @@ w
 q
 EOT
 
-    echo -e "Completed ${url}"
-
 }
 
 # #
 #   Download lists
 # #
 
-echo -e "Starting Script"
-download_list ${s100_90d_url} ${s100_90d_out}
+download_list ${s100_90d_url} ${s100_90d_file}
 
-echo -e
+# #
+#   Merge custom block list
+#
+#   these are blocks that will stay static and only be added to
+# #
+
+if [ -d ../blocks/ ]; then
+	for file in ../blocks/*.txt; do
+		echo -e "Adding static file ${file}"
+		cat ${file} >> ${s100_90d_file}
+	done
+fi
+
+if [ -d ./blocks/ ]; then
+	for file in ./blocks/*.txt; do
+		echo -e "Adding static file ${file}"
+		cat ${file} >> ${s100_90d_file}
+	done
+fi

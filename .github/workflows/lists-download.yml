@@ -81,7 +81,7 @@ jobs:
                 # cat csf.deny
 
                 # assign vars
-                now=$(date '+%Y/%m/%d %H:%M')
+                now=$(date '+%m/%d/%Y %H:%M')
                 commit_label="CRON" >> $GITHUB_ENV
                 commit_message="\`️️⚡️ $commit_label ⚡️\` \`$now\`" >> $GITHUB_ENV
                 echo "COMMIT_MESSAGE=$(echo $commit_message)" >> $GITHUB_ENV
@@ -89,7 +89,7 @@ jobs:
 
                 mkdir -p blocklists/etc/csf/
                 mv csf.deny blocklists/etc/csf/
-
+                
             # ---------------------------------------------------------------------------------------
             #   commit changes
             # ---------------------------------------------------------------------------------------
