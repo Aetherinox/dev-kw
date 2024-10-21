@@ -136,11 +136,13 @@ if [ -d .github/blocks/ ]; then
 	done
 fi
 
+echo -e "11"
 # #
 #   count total lines
 # #
 
 lines=$(wc -l < ${arg_file})    # count ip lines
+echo -e "22"
 
 # #
 #   ed
@@ -169,6 +171,8 @@ ed -s ${arg_file} <<END_ED
 w
 q
 END_ED
+
+echo -e "33"
 
 echo -e "  ✏️  Modifying template values in ${arg_file}"
 sed -i -e "s/{COUNT_TOTAL}/$lines/g" ${arg_file}          # replace {COUNT_TOTAL} with number of lines
