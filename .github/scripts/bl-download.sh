@@ -99,7 +99,7 @@ download_list()
     echo -e "  🌎 Move ${tempFile} to ${fnFile}"
     cat ${tempFile} >> ${fnFile}                            # copy .tmp contents to real file
 
-    echo -e "  ☑️  Added ${lines} lines to ${fnFile}"
+    echo -e "  👌 Added ${lines} lines to ${fnFile}"
 
     # #
     #   Cleanup
@@ -118,6 +118,23 @@ for arg in "${@:3}"; do
         echo -e
     fi
 done
+
+# #
+#   Add Static Files
+# #
+
+if [ -d .github/blocks/ ]; then
+	for file in .github/blocks/bruteforce/*.ipset; do
+		echo -e "  🗄️ Adding static file ${file}"
+    
+        echo -e "A"
+		cat ${file} >> ${arg_file}
+        echo -e "B"
+        count=$(grep -c "^[0-9]" ${file} | wc -l < ${file})     # count lines starting with number, print line count
+        echo -e "C"
+        echo -e "  👌 Added ${count} lines to ${arg_file}"
+	done
+fi
 
 # #
 #   count total lines
