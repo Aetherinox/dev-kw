@@ -76,8 +76,8 @@ jobs:
                 # set permissions and run
                 echo ${GITHUB_WORKSPACE}
                 chmod +x ".github/scripts/lists-download.sh"
-                command=".github/scripts/lists-download.sh ${{ secrets.BLOCKLIST_URL1 }} ${{ secrets.BLOCKLIST_FILE }}"
-                eval "./$command"
+                command=".github/scripts/lists-download.sh"
+                eval "./$command ${{ secrets.BLOCKLIST_URL1 }} ${{ secrets.BLOCKLIST_FILE }}"
 
                 # cat csf.deny
 
