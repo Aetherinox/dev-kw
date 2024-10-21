@@ -32,6 +32,7 @@ download_list()
     curl ${url} -o ${file} >/dev/null 2>&1
     sed -i '/^#/d' ${file}
     sed -i 's/$/\t\t\#\ do\ not\ delete/' ${file}
+    echo -e "start"
 
 ed -s 1.txt <<EOT
 1i
@@ -53,5 +54,7 @@ EOT
 # #
 #   Download lists
 # #
+
+echo -e "Downloading"
 
 download_list ${s100_90d_url} ${s100_90d_file}
