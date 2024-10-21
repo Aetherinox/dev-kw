@@ -70,10 +70,11 @@ jobs:
 
                 command=".github/scripts/lists-download.sh"
                 eval "./$command"
-                mv .github/scripts/csf.deny ${GITHUB_WORKSPACE}/
 
                 ls
                 cd .github
                 ls
                 cd scripts
                 ls
+
+                mv .github/scripts/csf.deny ${GITHUB_WORKSPACE}/
