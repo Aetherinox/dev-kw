@@ -7,16 +7,20 @@
 #           📁 blocks
 #               📄 1.txt
 #           📁 scripts
-#               📄 lists-download.sh
+#               📄 abuseipdb-blocklist-download.sh
 #           📁 workflows
-#               📄 lists-download.yml
+#               📄 abuseipdb-blocklist-download.yml
+#
+#   @usage              https://github.com/Aetherinox/csf-firewall
 # #
 
 #!/bin/bash
 
-s100_90d_url="https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/refs/heads/main/abuseipdb-s100-90d.ipv4"
-s100_90d_file="csf.deny"
+s100_90d_url="$1"
+s100_90d_file="$2"
 NOW=`date -u`
+lines_static=0
+lines_dynamic=0
 
 echo -e "⭐ Starting"
 
@@ -31,7 +35,10 @@ download_list()
     
     curl ${url} -o ${file} >/dev/null 2>&1
     sed -i '/^#/d' ${file}
-    sed -i 's/$/\t\t\#\ do\ not\ delete/' ${file}
+    sed -i 's/$/\t\t\t\#\ do\ not\ delete/' ${file}
+    lines_dynamic=$(wc -l < ${file})
+
+    echo -e "Dynamic Count: ${lines_dynamic}"
 
 ed -s ${file} <<EOT
 1i
@@ -41,6 +48,7 @@ ed -s ${file} <<EOT
 #    @url          Aetherinox/csf-firewall
 #    @desc         list of ip addresses actively trying to scan servers
 #    @last         ${NOW}
+#    @ips          {COUNT}
 # #
 
 .
@@ -69,3 +77,17 @@ if [ -d .github/blocks/ ]; then
 		cat ${file} >> ${s100_90d_file}
 	done
 fi
+
+# #
+#   Static > Get IP Count
+# #
+
+lines_static=$(grep -c "^[0-9]" ${file} | wc -l < ${file})
+echo -e "Static Count: ${lines_static}"
+
+# #
+#   Set header line count
+# #
+
+lines=`expr $lines_static + $lines_dynamic`
+sed -i -e "s/{COUNT}/$lines/g" ${s100_90d_file}

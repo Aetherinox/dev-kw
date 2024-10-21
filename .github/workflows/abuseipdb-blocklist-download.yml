@@ -5,8 +5,8 @@
 #   @url                https://github.com/Aetherinox
 # #
 
-name: "⚡︎ Lists › Download"
-run-name: "⚡︎ Lists › Download"
+name: "🧱 Blocklist › Generate"
+run-name: "🧱 Blocklist › Generate"
 
 # #
 #   triggers
@@ -14,6 +14,9 @@ run-name: "⚡︎ Lists › Download"
 
 on:
     workflow_dispatch:
+
+    schedule:
+        - cron: '0 * * * *'
 
 # #
 #   environment variables
@@ -27,12 +30,10 @@ env:
 
 # #
 #   jobs
-#
-#   env not available for job.if
 # #
 
 jobs:
-    deploy:
+    build:
         runs-on: ubuntu-22.04
         timeout-minutes: 3
         steps:
@@ -69,18 +70,20 @@ jobs:
             #       secure: false
             # #
 
-            - run: |
+            - name: "🧱 Generate"
+              id: task_build_generate
+              run: |
                 # set permissions and run
                 echo ${GITHUB_WORKSPACE}
                 chmod +x ".github/scripts/lists-download.sh"
-                command=".github/scripts/lists-download.sh"
+                command=".github/scripts/lists-download.sh ${{ env.BLOCKLIST_URL1 }} ${{ env.BLOCKLIST_FILE }}"
                 eval "./$command"
 
                 # cat csf.deny
 
                 # assign vars
                 now=$(date '+%m/%d/%Y %H:%M')
-                commit_label="CRON" >> $GITHUB_ENV
+                commit_label="Sync" >> $GITHUB_ENV
                 commit_message="\`️️⚡️ $commit_label ⚡️\` \`$now\`" >> $GITHUB_ENV
                 echo "COMMIT_MESSAGE=$(echo $commit_message)" >> $GITHUB_ENV
                 echo "NOW=$(echo $now)" >> $GITHUB_ENV
