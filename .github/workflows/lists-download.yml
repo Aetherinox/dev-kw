@@ -67,8 +67,9 @@ jobs:
                 echo ${GITHUB_WORKSPACE}
                 chmod +x ".github/scripts/lists-download.sh"
                 bash ".github/scripts/lists-download.sh"
-                cd .github/
-                ls
 
                 command=".github/scripts/lists-download.sh"
                 eval "./$command"
+                mv .github/scripts/csf.deny ${GITHUB_WORKSPACE}/
+
+                ls
