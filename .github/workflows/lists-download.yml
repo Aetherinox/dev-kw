@@ -69,8 +69,6 @@ jobs:
             #       secure: false
             # #
 
-            - uses: actions/checkout@v3
-
             - run: |
                 # set permissions and run
                 echo ${GITHUB_WORKSPACE}
@@ -89,7 +87,7 @@ jobs:
 
                 mkdir -p blocklists/etc/csf/
                 mv csf.deny blocklists/etc/csf/
-                
+
             # ---------------------------------------------------------------------------------------
             #   commit changes
             # ---------------------------------------------------------------------------------------
