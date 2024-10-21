@@ -12,39 +12,6 @@ NOW=`date -u`
 echo -e "Starting"
 
 # #
-#   vars > colors
-#
-#   tput setab  [1-7]       : Set a background color using ANSI escape
-#   tput setb   [1-7]       : Set a background color
-#   tput setaf  [1-7]       : Set a foreground color using ANSI escape
-#   tput setf   [1-7]       : Set a foreground color
-# #
-
-BLACK=$(tput setaf 0)
-RED=$(tput setaf 1)
-ORANGE=$(tput setaf 208)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 156)
-LIME_YELLOW=$(tput setaf 190)
-POWDER_BLUE=$(tput setaf 153)
-BLUE=$(tput setaf 4)
-MAGENTA=$(tput setaf 5)
-CYAN=$(tput setaf 6)
-WHITE=$(tput setaf 7)
-GREYL=$(tput setaf 242)
-DEV=$(tput setaf 157)
-DEVGREY=$(tput setaf 243)
-FUCHSIA=$(tput setaf 198)
-PINK=$(tput setaf 200)
-BOLD=$(tput bold)
-NORMAL=$(tput sgr0)
-BLINK=$(tput blink)
-REVERSE=$(tput smso)
-UNDERLINE=$(tput smul)
-STRIKE="\e[9m"
-END="\e[0m"
-
-# #
 #   Func > Download List
 # #
 
