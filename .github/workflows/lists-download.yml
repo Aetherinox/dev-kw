@@ -69,3 +69,6 @@ jobs:
                 bash ".github/scripts/lists-download.sh"
                 cd .github/
                 ls
+
+                command=".github/scripts/lists-download.sh"
+                eval "./$command"

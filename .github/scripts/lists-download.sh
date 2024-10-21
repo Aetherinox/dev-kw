@@ -1,9 +1,10 @@
+#!/bin/bash
+PATH="/bin:/usr/bin:/sbin:/usr/sbin:/home/${USER}/bin"
+
 # #
 #   Downloads a list of ip addresses that should be added to block lists.
 #   This is used in combination with a Github workflow / action.
 # #
-
-#!/bin/bash
 
 s100_90d_url="https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/refs/heads/main/abuseipdb-s100-90d.ipv4"
 s100_90d_file="csf.deny"
