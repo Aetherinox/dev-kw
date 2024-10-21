@@ -78,7 +78,7 @@ jobs:
                 command=".github/scripts/lists-download.sh"
                 eval "./$command"
 
-                cat csf.deny
+                # cat csf.deny
 
                 # assign vars
                 now=$(date '+%Y/%m/%d %H:%M')
@@ -87,6 +87,7 @@ jobs:
                 echo "COMMIT_MESSAGE=$(echo $commit_message)" >> $GITHUB_ENV
                 echo "NOW=$(echo $now)" >> $GITHUB_ENV
 
+                mkdir -p blocklists/etc/csf/
                 mv csf.deny blocklists/etc/csf/
 
             # ---------------------------------------------------------------------------------------
