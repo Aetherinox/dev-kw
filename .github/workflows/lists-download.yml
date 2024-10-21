@@ -1,0 +1,64 @@
+# #
+#   @type               github workflow
+#   @desc               download AbuseIPDB ip list
+#   @author             Aetherinox
+#   @url                https://github.com/Aetherinox
+# #
+
+name: "⚡︎ Lists › Download"
+run-name: "⚡︎ Lists › Download"
+
+# #
+#   triggers
+# #
+
+on:
+    workflow_dispatch:
+
+# #
+#   environment variables
+# #
+
+env:
+    BOT_NAME_1:           AdminServ
+    BOT_NAME_2:           AdminServX
+    BOT_NAME_3:           EuropaServ
+    BOT_NAME_DEPENDABOT:  dependabot[bot]
+
+# #
+#   jobs
+#
+#   env not available for job.if
+# #
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+
+            # #
+            #   Job > Complete > Get publish timestamp
+            # #
+
+            - name: "🕛 Get Timestamp"
+              id: task_complete_timestamp_get
+              run: |
+                echo "NOW=$(date +'%m-%d-%Y %H:%M:%S')" >> $GITHUB_ENV
+
+            # #
+            #   Add Label to accepted PR
+            #
+            #   port 465
+            #       server_port: 465
+            #       secure: true
+            #       ignore_cert: false
+            #
+            #   port 587
+            #       server_port: 587
+            #       secure: false
+            # #
+
+            - run: |
+                # make file runnable, might not be necessary
+                chmod +x "${GITHUB_WORKSPACE}/.github/scripts/lists-download.sh"
+                bash "${GITHUB_WORKSPACE}/.github/scripts/lists-download.sh"

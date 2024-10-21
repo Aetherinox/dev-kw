@@ -100,7 +100,7 @@ jobs:
                         </style>
                         </head>
 
-                        <body class="bgimg">
+                        <body>
                         <div class="background-overlay">
                         <center>
                         <div class="background-header">
