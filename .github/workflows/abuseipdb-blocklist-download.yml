@@ -75,9 +75,8 @@ jobs:
               run: |
                 # set permissions and run
                 echo ${GITHUB_WORKSPACE}
-                chmod +x ".github/scripts/lists-download.sh"
-                command=".github/scripts/lists-download.sh https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/refs/heads/main/abuseipdb-s100-90d.ipv4 csf.deny"
-                echo $command
+                chmod +x ".github/scripts/abuseipdb-blocklist-download.sh"
+                command=".github/scripts/abuseipdb-blocklist-download.sh ${{ secrets.BLOCKLIST_URL1 }} ${{ secrets.BLOCKLIST_FILE }}"
                 eval "./$command"
 
                 # cat csf.deny
