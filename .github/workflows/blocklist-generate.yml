@@ -87,7 +87,7 @@ jobs:
                 # #
 
                 mkdir -p blocklists/
-                mv ${{ secrets.API_01_FILE }} blocklists/
+                mv ${{ secrets.API_01_OUT }} blocklists/
 
             # #
             #   Generate > Precommit
