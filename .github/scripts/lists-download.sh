@@ -25,6 +25,8 @@ NOW=`date -u`
 #   Func > Download List
 # #
 
+echo -e
+
 download_list()
 {
     local url=$1
@@ -35,7 +37,6 @@ download_list()
     curl ${url} -o ${file} >/dev/null 2>&1
     sed -i '/^#/d' ${file}
     sed -i 's/$/\t\t\#\ do\ not\ delete/' ${file}
-    echo -e "start"
 
 ed -s ${file} <<EOT
 1i
@@ -62,3 +63,5 @@ EOT
 
 echo -e "Starting Script"
 download_list ${s100_90d_url} ${s100_90d_out}
+
+echo -e

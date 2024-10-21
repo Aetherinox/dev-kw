@@ -33,17 +33,28 @@ env:
 
 jobs:
     deploy:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-22.04
+        timeout-minutes: 3
         steps:
 
             # #
-            #   Job > Complete > Get publish timestamp
+            #   Job > Start
             # #
 
-            - name: "🕛 Get Timestamp"
-              id: task_complete_timestamp_get
+            - name: "✅ Start"
+              id: task_build_start
               run: |
-                echo "NOW=$(date +'%m-%d-%Y %H:%M:%S')" >> $GITHUB_ENV
+                echo "Starting build"
+
+            # #
+            #   Job > Checkout
+            # #
+
+            - name: "☑️ Checkout"
+              id: task_build_checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
 
             # #
             #   Add Label to accepted PR
@@ -61,10 +72,21 @@ jobs:
             - uses: actions/checkout@v3
 
             - run: |
-                # make file runnable, might not be necessary
+                # set permissions and run
                 echo ${GITHUB_WORKSPACE}
                 chmod +x ".github/scripts/lists-download.sh"
                 command=".github/scripts/lists-download.sh"
                 eval "./$command"
 
                 cat csf.deny
+                NOW=$(date '+%Y/%m/%d %H:%M')
+                commit_label="CRON" >> $GITHUB_ENV
+                commit_message="\`️️⚡️ $commit_label ⚡️\` \`$NOW\`" >> $GITHUB_ENV
+
+                echo "COMMIT_MESSAGE=$(echo $commit_message)" >> $GITHUB_ENV
+            # ---------------------------------------------------------------------------------------
+            #   commit changes
+            # ---------------------------------------------------------------------------------------
+
+            - run: |
+                echo ${{ env.COMMIT_MESSAGE }}
