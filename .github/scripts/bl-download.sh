@@ -166,9 +166,9 @@ ed -s ${arg_file} <<END_ED
 .
 w
 q
-END_ED
+END_ED >/dev/null 2>&1
 
-echo -e "  ✏️  Modifying template values in ${arg_file}"
+echo -e "  ✏️ Modifying template values in ${arg_file}"
 sed -i -e "s/{COUNT_TOTAL}/$lines/g" ${arg_file}          # replace {COUNT_TOTAL} with number of lines
 
 echo -e "  🎌 Finished"
