@@ -65,7 +65,6 @@ jobs:
                 ls
                 dir
                 echo ${GITHUB_WORKSPACE}
-                chmod +x "${GITHUB_WORKSPACE}/.github/scripts/lists-download.sh"
                 chmod +x "/.github/scripts/lists-download.sh"
-                bash "${GITHUB_WORKSPACE}/.github/scripts/lists-download.sh"
+                bash "/.github/scripts/lists-download.sh"
                 ls
