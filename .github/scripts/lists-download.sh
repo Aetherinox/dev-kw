@@ -6,8 +6,9 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin:/home/${USER}/bin"
 #   This is used in combination with a Github workflow / action.
 # #
 
-s100_90d_url="https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/refs/heads/main/abuseipdb-s100-90d.ipv4"
-s100_90d_file="csf.deny"
+s100_90d_file="abuseipdb-s100-90d.ipv4"
+s100_90d_url="https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/refs/heads/main/${s100_90d_file}"
+s100_90d_out="csf.deny"
 NOW=`date -u`
 
 # #
@@ -29,6 +30,8 @@ download_list()
     local url=$1
     local file=$2
     
+    echo -e "Creating ${url}"
+
     curl ${url} -o ${file} >/dev/null 2>&1
     sed -i '/^#/d' ${file}
     sed -i 's/$/\t\t\#\ do\ not\ delete/' ${file}
@@ -49,12 +52,13 @@ w
 q
 EOT
 
+    echo -e "Completed ${url}"
+
 }
 
 # #
 #   Download lists
 # #
 
-echo -e "Downloading"
-
-download_list ${s100_90d_url} ${s100_90d_file}
+echo -e "Starting Script"
+download_list ${s100_90d_url} ${s100_90d_out}
