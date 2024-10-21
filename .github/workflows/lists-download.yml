@@ -72,9 +72,14 @@ jobs:
                 eval "./$command"
 
                 ls
+                echo -e ".github"
                 cd .github
                 ls
+                echo -e "----------"
+                echo -e
+                echo -e ".scripts"
                 cd scripts
                 ls
+                echo -e "----------"
 
                 mv .github/scripts/csf.deny ${GITHUB_WORKSPACE}/
