@@ -34,7 +34,7 @@ download_list()
     sed -i 's/$/\t\t\#\ do\ not\ delete/' ${file}
     echo -e "start"
 
-ed -s 1.txt <<EOT
+ed -s ${file} <<EOT
 1i
 # #
 #    ConfigServer Firewall (Deny List)
