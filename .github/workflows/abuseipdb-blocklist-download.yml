@@ -76,8 +76,9 @@ jobs:
                 # set permissions and run
                 echo ${GITHUB_WORKSPACE}
                 chmod +x ".github/scripts/lists-download.sh"
-                command=".github/scripts/lists-download.sh"
-                eval "./$command https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/refs/heads/main/abuseipdb-s100-90d.ipv4 csf.deny"
+                command=".github/scripts/lists-download.sh https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/refs/heads/main/abuseipdb-s100-90d.ipv4 csf.deny"
+                echo $command
+                eval "./$command"
 
                 # cat csf.deny
 
