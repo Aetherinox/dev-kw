@@ -58,6 +58,8 @@ jobs:
             #       secure: false
             # #
 
+            - uses: actions/checkout@v3
+
             - run: |
                 # make file runnable, might not be necessary
                 ls
