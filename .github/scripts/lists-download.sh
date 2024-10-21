@@ -53,15 +53,8 @@ download_list ${s100_90d_url} ${s100_90d_file}
 #   these are blocks that will stay static and only be added to
 # #
 
-if [ -d ../blocks/ ]; then
-	for file in ../blocks/*.txt; do
-		echo -e "Adding static file ${file}"
-		cat ${file} >> ${s100_90d_file}
-	done
-fi
-
-if [ -d ./blocks/ ]; then
-	for file in ./blocks/*.txt; do
+if [ -d .github/blocks/ ]; then
+	for file in .github/blocks/*.txt; do
 		echo -e "Adding static file ${file}"
 		cat ${file} >> ${s100_90d_file}
 	done
