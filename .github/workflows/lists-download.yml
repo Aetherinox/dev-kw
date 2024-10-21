@@ -63,9 +63,8 @@ jobs:
             - run: |
                 # make file runnable, might not be necessary
                 echo ${GITHUB_WORKSPACE}
-                chmod +x "${GITHUB_WORKSPACE}/.github/scripts/lists-download.sh"
-
-                command="${GITHUB_WORKSPACE}/.github/scripts/lists-download.sh"
+                chmod +x ".github/scripts/lists-download.sh"
+                command=".github/scripts/lists-download.sh"
                 eval "./$command"
 
                 cat csf.deny
