@@ -73,3 +73,7 @@ jobs:
                 mv .github/scripts/csf.deny ${GITHUB_WORKSPACE}/
 
                 ls
+                cd .github
+                ls
+                cd scripts
+                ls
