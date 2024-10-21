@@ -60,5 +60,6 @@ jobs:
 
             - run: |
                 # make file runnable, might not be necessary
+                ls
                 chmod +x "${GITHUB_WORKSPACE}/.github/scripts/lists-download.sh"
                 bash "${GITHUB_WORKSPACE}/.github/scripts/lists-download.sh"
