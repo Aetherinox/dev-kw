@@ -9,6 +9,8 @@ s100_90d_url="https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/ref
 s100_90d_file="csf.deny"
 NOW=`date -u`
 
+echo -e "Starting"
+
 # #
 #   vars > colors
 #
@@ -55,7 +57,7 @@ download_list()
     sed -i '/^#/d' ${file}
     sed -i 's/$/\t\t\#\ do\ not\ delete/' ${file}
 
-ed -s 1.txt <<EOT
+ed -s ${file} <<EOT
 1i
 # #
 #    ConfigServer Firewall (Deny List)
