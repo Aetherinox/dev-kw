@@ -81,14 +81,11 @@ if [ -d .github/blocks/ ]; then
 		echo -e "  📒 Adding static file ${file}"
     
 		cat ${file} >> ${arg_file}
-        filter=$(grep -c "^[0-9]" ${file})          # count lines starting with number, print line count
-        count=$(echo ${filter} | wc -l < ${file})
+        count=$(grep -c "^[0-9]" ${file})           # count lines starting with number, print line count
         lines=`expr $lines + $count`                # add line count from each file together
         echo -e "  👌 Added ${count} lines to ${arg_file}"
 	done
 fi
-
-
 
 # #
 #   ed
