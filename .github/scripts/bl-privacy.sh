@@ -7,15 +7,15 @@
 #   
 #   used in combination with .github/workflows/bl-download.yml
 #
-#   downloads a list of .txt / .ipset IP addresses in single file.
-#   generates a header to place at the top.
+#   fetches a list of ipsets within the local repository and puts them together into
+#   a single file
 #   
 #   api-endpoint hosted internally
 #   
 #   local test requires the same structure as the github workflow
 #       📁 .github
 #           📁 blocks
-#               📄 1.txt
+#               📄 privacy.txt
 #           📁 scripts
 #               📄 bl-download.sh
 #           📁 workflows
@@ -54,7 +54,7 @@ lines=0
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-echo -e "  Blocklist - ${arg_file}"
+echo -e "  Blocklist - ${arg_file} (Privacy)"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 
 echo -e
@@ -73,74 +73,6 @@ else
 fi
 
 # #
-#   Func > Download List
-# #
-
-download_list()
-{
-
-    local fnUrl=$1
-    local fnFile=$2
-    local tempFile="${2}.tmp"
-
-    echo -e "  🌎 Downloading IP blacklist to ${tempFile}"
-
-    curl ${fnUrl} -o ${tempFile} >/dev/null 2>&1            # download file
-    sed -i 's/\ #.*//' ${tempFile}                          # remove comments at end
-    sed -i 's/\-.*//' ${tempFile}                           # remove hyphens for ip ranges
-    sed -i '/^#/d' ${tempFile}                              # remove lines starting with `#`
-    if [ "$arg_bDND" = true ] ; then
-        echo -e "  ⭕ Enabled \`# do not delete\`"
-        sed -i 's/$/\t\t\t\#\ do\ not\ delete/' ${tempFile} # add csf `# do not delete` to end of each line
-    fi
-
-    lines=$(wc -l < ${tempFile})                            # count ip lines
-
-    echo -e "  🌎 Move ${tempFile} to ${fnFile}"
-    cat ${tempFile} >> ${fnFile}                            # copy .tmp contents to real file
-
-    echo -e "  👌 Added ${lines} lines to ${fnFile}"
-
-    # #
-    #   Cleanup
-    # #
-
-    rm ${tempFile}
-}
-
-# #
-#   Download lists
-# #
-
-for arg in "${@:3}"; do
-    if [[ $arg =~ $regexURL ]]; then
-        download_list ${arg} ${arg_file}
-        echo -e
-    fi
-done
-
-# #
-#   Add Static Files
-# #
-
-if [ -d .github/blocks/ ]; then
-	for file in .github/blocks/bruteforce/*.ipset; do
-		echo -e "  📒 Adding static file ${file}"
-    
-		cat ${file} >> ${arg_file}
-        filter=$(grep -c "^[0-9]" ${file})     # count lines starting with number, print line count
-        count=$(echo ${filter} | wc -l < ${file})
-        echo -e "  👌 Added ${count} lines to ${arg_file}"
-	done
-fi
-
-# #
-#   count total lines
-# #
-
-lines=$(wc -l < ${arg_file})    # count ip lines
-
-# #
 #   ed
 #       0a  top of file
 # #
@@ -156,11 +88,9 @@ ed -s ${arg_file} <<END_ED
 #   @expires        6 hours
 #   @category       full
 #
-#   auto-generated list which contains the following:
-#       - AbuseIPDB 100% Confidence
-#       - IPThreat.net 90% Confidence
-#       - Port scanners
-#       - SSH bruteforce attempts
+#   This is a static list of abusive IP addresses provided by https://github.com/Aetherinox/csf-firewall
+#   This list contains IP addresses to servers that frequently scan websites in order to obtain information. 
+#   This can include crawlers and research groups.
 # #
 
 .
