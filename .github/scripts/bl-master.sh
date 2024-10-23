@@ -122,6 +122,8 @@ download_list()
     sed -i 's/\-.*//' ${tempFile}                               # remove hyphens for ip ranges
     sed -i 's/[[:blank:]]*$//' ${tempFile}                      # remove space / tab from EOL
 
+    echo -e "Pass 1"
+
     if [ "$ARG_BOOL_DND" = true ] ; then
         echo -e "  ⭕ Enabled \`# do not delete\`"
         sed -i 's/$/\t\t\t\#\ do\ not\ delete/' ${tempFile}     # add csf `# do not delete` to end of each line
@@ -135,7 +137,9 @@ download_list()
     #   so we will count every IP in the block.
     # #
 
+    echo -e "Pass 2"
     while read line; do
+        echo -e "Pass while"
         # is subnet
         if [[ $line =~ /[0-9]{1,2}$ ]]; then
 
@@ -147,6 +151,7 @@ download_list()
             COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`
         fi
     done < <(cat ${tempFile})
+    echo -e "Pass 3"
 
     # #
     #   Count lines and subnets
