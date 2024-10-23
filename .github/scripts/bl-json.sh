@@ -6,11 +6,8 @@
 #   @type               bash script
 #   
 #                       📁 .github
-#                           📁 blocks
-#                               📁 privacy
-#                                   📄 *.txt
 #                           📁 scripts
-#                               📄 bl-static.sh
+#                               📄 bl-json.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
@@ -18,18 +15,14 @@
 #       - .github/workflows/blocklist-generate.yml
 #
 #   within github workflow, run:
-#       chmod +x ".github/scripts/bl-static.sh"
-#       run_general=".github/scripts/bl-static.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
-#       eval "./$run_general"
+#       chmod +x ".github/scripts/bl-json.sh"
+#       run_google=".github/scripts/bl-json.sh ${{ vars.API_02_GOOGLE_OUT }} ${{secrets.API_02_GOOGLE_URL}} '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
+#       eval "./$run_google"
 #
-#   fetches entries from a local static file. these files are located within the repo directory
-#       - .github/blocks/${ARG_BLOCKS_CAT}/*.ipset
+#   allows you to specify a .json file, and the query to use for data extraction.
 #
-#   IP addresses in static file are cleaned up to remove comments, and then saved to a new file
-#   within the public blocklists folder within the repository.
-#
-#   @uage               bl-static.sh <ARG_SAVEFILE> <ARG_BLOCKS_CAT>
-#                       bl-static.sh 02_privacy_general.ipset privacy
+#   @uage               bl-json.sh <ARG_SAVEFILE> <ARG_JSON_URL> <ARG_JSON_QRY>
+#                       bl-json.sh 02_privacy_google.ipset https://api.domain.lan/googlebot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'
 # #
 
 # #
@@ -38,11 +31,13 @@
 #   This bash script has the following arguments:
 #
 #       ARG_SAVEFILE        (str)       file to save IP addresses into
-#       ARG_BLOCKS_CAT      (str)       which blocks folder to inject static IP addresses from
+#       ARG_JSON_URL        (str)       direct url to json file to download
+#       ARG_JSON_QRY        (str)       jq rules which pull the needed ip addresses
 # #
 
 ARG_SAVEFILE=$1
-ARG_BLOCKS_CAT=$2
+ARG_JSON_URL=$2
+ARG_JSON_QRY=$3
 
 # #
 #   Validation checks
@@ -54,8 +49,15 @@ if [[ -z "${ARG_SAVEFILE}" ]]; then
     exit 1
 fi
 
-if [ -z "${ARG_BLOCKS_CAT}" ]; then
-    echo -e "  ⭕  Aborting -- no static file category specified. ex: privacy"
+if [[ -z "${ARG_JSON_URL}" ]] || [[ ! $ARG_JSON_URL =~ $regexURL ]]; then
+    echo -e "  ⭕ Invalid URL specified for ${ARG_SAVEFILE}"
+    echo -e
+    exit 1
+fi
+
+if [[ -z "${ARG_JSON_QRY}" ]]; then
+    echo -e "  ⭕ No valid jq query specified for ${ARG_SAVEFILE}"
+    echo -e
     exit 1
 fi
 
@@ -89,7 +91,7 @@ fi
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-echo -e "  Blocklist - ${ARG_SAVEFILE} (${ARG_BLOCKS_CAT})"
+echo -e "  Blocklist - ${ARG_SAVEFILE}"
 echo -e "  ID:         ${ID}"
 echo -e "  CATEGORY:   ${CATEGORY}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
@@ -114,19 +116,35 @@ else
 fi
 
 # #
-#   Add Static Files
+#   Get IP list
 # #
 
-if [ -d .github/blocks/ ]; then
-	for file in .github/blocks/${ARG_BLOCKS_CAT}/*.ipset; do
-		echo -e "  📒 Adding static file ${file}"
-    
-		cat ${file} >> ${ARG_SAVEFILE}
-        count=$(grep -c "^[0-9]" ${file})           # count lines starting with number, print line count
-        LINES=`expr $LINES + $count`                # add line count from each file together
-        echo -e "  👌 Added ${count} lines to ${ARG_SAVEFILE}"
-	done
-fi
+echo -e "  🌎 Downloading IP blacklist to ${ARG_SAVEFILE}"
+
+# #
+#   Get IP list
+# #
+
+tempFile="${ARG_SAVEFILE}.tmp"
+jsonOutput=$(curl -Ss ${ARG_JSON_URL} | jq -r "${ARG_JSON_QRY}" | sort > ${tempFile})
+sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}          # remove # and ; comments
+sed -i 's/\-.*//' ${tempFile}                               # remove hyphens for ip ranges
+sed -i 's/[[:blank:]]*$//' ${tempFile}                      # remove space / tab from EOL
+
+# #
+#   count lines
+# #
+
+LINES=$(wc -l < ${tempFile})                                    # count ip lines
+
+# #
+#   move temp file to perm
+# #
+
+echo -e "  🌎 Move ${tempFile} to ${ARG_SAVEFILE}"
+cat ${tempFile} >> ${ARG_SAVEFILE}                              # copy .tmp contents to real file
+rm ${tempFile}
+echo -e "  👌 Added ${LINES} lines to ${ARG_SAVEFILE}"
 
 # #
 #   ed
@@ -153,7 +171,7 @@ q
 END_ED
 
 echo -e "  ✏️ Modifying template values in ${ARG_SAVEFILE}"
-sed -i -e "s/{COUNT_TOTAL}/$LINES/g" ${ARG_SAVEFILE}          # replace {COUNT_TOTAL} with number of lines
+sed -i -e "s/{COUNT_TOTAL}/$LINES/g" ${ARG_SAVEFILE}            # replace {COUNT_TOTAL} with number of lines
 
 # #
 #   Move ipset to final location
