@@ -141,6 +141,7 @@ download_list()
     while read line; do
         echo -e "Pass while"
         # is subnet
+        echo $line
         if [[ $line =~ /[0-9]{1,2}$ ]]; then
 
             COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`       # count subnet
