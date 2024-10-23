@@ -48,6 +48,9 @@ ARG_BLOCKS_CAT=$2
 #   Validation checks
 # #
 
+echo $ARG_SAVEFILE
+echo $ARG_BLOCKS_CAT
+
 if [[ -z "${ARG_SAVEFILE}" ]]; then
     echo -e "  ⭕ No output file specified for Google Crawler list"
     echo -e
