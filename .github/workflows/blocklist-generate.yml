@@ -45,7 +45,6 @@ env:
 jobs:
     build:
         runs-on: orion-x64
-        timeout-minutes: 10
         steps:
 
             # #
