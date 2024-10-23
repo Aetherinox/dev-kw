@@ -138,20 +138,8 @@ download_list()
     while read line; do
         # is subnet
         if [[ $line =~ /[0-9]{1,2}$ ]]; then
-            ips=$(( 1 << (32 - ${line#*/}) ))
 
-            regexIsNum='^[0-9]+$'
-            if [[ $ips =~ $regexIsNum ]]; then
-                CIDR=$(echo $line | sed 's:.*/::')
-
-                # subtract - 2 from any cidr not ending with 31 or 32
-                # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
-                    # COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP - 2`
-                # fi
-
-                COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`            # count IPs in subnet
                 COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`       # count subnet
-
                 B_IS_SUBNET=true
             fi
 
