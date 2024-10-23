@@ -54,7 +54,7 @@ if [[ -z "${ARG_SAVEFILE}" ]]; then
     exit 1
 fi
 
-if [ -z "${ARG_BLOCKS_CAT}" ]; then
+if [[ -z "${ARG_BLOCKS_CAT}" ]]; then
     echo -e "  ⭕  Aborting -- no static file category specified. ex: privacy"
     exit 1
 fi
