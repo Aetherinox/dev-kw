@@ -124,7 +124,7 @@ fi
 # #
 
 if [ -d .github/blocks/ ]; then
-	for tempFile in .github/blocks/bruteforce/*.ipset; do
+	for tempFile in .github/blocks/${ARG_BLOCKS_CAT}/*.ipset; do
 		echo -e "  📒 Adding static file ${tempFile}"
 
         # #
