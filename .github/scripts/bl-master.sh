@@ -139,9 +139,8 @@ download_list()
         # is subnet
         if [[ $line =~ /[0-9]{1,2}$ ]]; then
 
-                COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`       # count subnet
-                B_IS_SUBNET=true
-            fi
+            COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`       # count subnet
+            B_IS_SUBNET=true
 
         # is normal IP
         elif [[ $line =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
