@@ -105,6 +105,8 @@ fi
 download_list()
 {
 
+    echo -e "Start download_list"
+
     local fnUrl=$1
     local fnFile=$2
     local tempFile="${2}.tmp"
@@ -185,8 +187,10 @@ download_list()
 #   Download lists
 # #
 
+echo -e "Download"
 for arg in "${@:3}"; do
     if [[ $arg =~ $regexURL ]]; then
+        echo -e "Download ARG ${arg} to ${ARG_SAVEFILE}"
         download_list ${arg} ${ARG_SAVEFILE}
         echo -e
     fi
