@@ -49,7 +49,6 @@ NOW=`date -u`
 COUNT_LINES=0                   # number of lines in doc
 COUNT_TOTAL_SUBNET=0            # number of IPs in all subnets combined
 COUNT_TOTAL_IP=0                # number of single IPs (counts each line)
-B_IS_SUBNET=false               # bool - determines if there's any subnets in the list
 ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"
 DESCRIPTION=$(curl -sS "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/descriptions/${ID}.txt")
 CATEGORY=$(curl -sS "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/categories/${ID}.txt")
@@ -91,9 +90,11 @@ echo -e "  ⭐ Starting"
 
 if [ -f $ARG_SAVEFILE ]; then
     echo -e "  📄 Cleaning ${ARG_SAVEFILE}"
+    echo -e
    > ${ARG_SAVEFILE}       # clean file
 else
     echo -e "  📄 Creating ${ARG_SAVEFILE}"
+    echo -e
    touch ${ARG_SAVEFILE}
 fi
 
@@ -107,12 +108,14 @@ download_list()
     local fnUrl=$1
     local fnFile=$2
     local tempFile="${2}.tmp"
+    local DL_COUNT_TOTAL_IP=0
+    local DL_COUNT_TOTAL_SUBNET=0
 
     echo -e "  🌎 Downloading IP blacklist to ${tempFile}"
 
     curl ${fnUrl} -o ${tempFile} >/dev/null 2>&1                # download file
-    sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}          # remove # and ; comments
     sed -i 's/\-.*//' ${tempFile}                               # remove hyphens for ip ranges
+    sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}          # remove # and ; comments
     sed -i 's/[[:blank:]]*$//' ${tempFile}                      # remove space / tab from EOL
 
     if [ "$ARG_BOOL_DND" = true ] ; then
@@ -128,7 +131,7 @@ download_list()
     #   so we will count every IP in the block.
     # #
 
-    while read line; do
+    for line in $(cat ${tempFile}); do
         # is subnet
         if [[ $line =~ /[0-9]{1,2}$ ]]; then
             ips=$(( 1 << (32 - ${line#*/}) ))
@@ -140,33 +143,36 @@ download_list()
                 # subtract - 2 from any cidr not ending with 31 or 32
                 # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
                     # COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP - 2`
+                    # DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP - 2`
                 # fi
 
-                COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`            # count IPs in subnet
-                COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`       # count subnet
+                COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`            # GLOBAL count IPs in subnet
+                COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`       # GLOBAL count subnet
 
-                B_IS_SUBNET=true
+                DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + $ips`      # LOCAL count IPs in subnet
+                DL_COUNT_TOTAL_SUBNET=`expr $DL_COUNT_TOTAL_SUBNET + 1` # LOCAL count subnet
             fi
 
         # is normal IP
         elif [[ $line =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`
+            DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + 1`
         fi
-    done < <(cat ${tempFile})
+    done
 
     # #
     #   Count lines and subnets
     # #
 
-    COUNT_LINES=$(wc -l < ${tempFile})                          # count ip lines
-    COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                  # add commas to thousands
-    COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")            # add commas to thousands
-    COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")    # add commas to thousands
+    COUNT_LINES=$(wc -l < ${tempFile})                              # count ip lines
 
-    echo -e "  🌎 Move ${tempFile} to ${fnFile}"
-    cat ${tempFile} >> ${fnFile}                                # copy .tmp contents to real file
+    DL_COUNT_TOTAL_IP=$(printf "%'d" "$DL_COUNT_TOTAL_IP")          # LOCAL add commas to thousands
+    DL_COUNT_TOTAL_SUBNET=$(printf "%'d" "$DL_COUNT_TOTAL_SUBNET")  # LOCAL add commas to thousands
 
-    echo -e "  👌 Added ${COUNT_LINES} lines and ${COUNT_TOTAL_SUBNET} IPs to ${fnFile}"
+    echo -e "  🚛 Move ${tempFile} to ${fnFile}"
+    cat ${tempFile} >> ${fnFile}                                    # copy .tmp contents to real file
+
+    echo -e "  ➕ Added ${DL_COUNT_TOTAL_IP} IPs and ${DL_COUNT_TOTAL_SUBNET} subnets to ${fnFile}"
 
     # #
     #   Cleanup
@@ -187,6 +193,14 @@ for arg in "${@:3}"; do
 done
 
 # #
+#   Format Counts
+# #
+
+COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                                      # GLOBAL add commas to thousands
+COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")                                # GLOBAL add commas to thousands
+COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                        # GLOBAL add commas to thousands
+
+# #
 #   ed
 #       0a  top of file
 # #
@@ -197,6 +211,7 @@ ed -s ${ARG_SAVEFILE} <<END_ED
 #   🧱 Firewall Blocklist - ${ARG_SAVEFILE}
 #
 #   @url            https://github.com/Aetherinox/csf-firewall
+#   @id             ${ID}
 #   @updated        ${NOW}
 #   @entries        $COUNT_LINES lines
 #                   $COUNT_TOTAL_SUBNET subnets
@@ -216,7 +231,7 @@ END_ED
 #   Move ipset to final location
 # #
 
-echo -e "  📡 Moving ${ARG_SAVEFILE} to ${FOLDER_SAVETO}/${ARG_SAVEFILE}"
+echo -e "  🚛 Move ${ARG_SAVEFILE} to ${FOLDER_SAVETO}/${ARG_SAVEFILE}"
 mkdir -p ${FOLDER_SAVETO}/
 mv ${ARG_SAVEFILE} ${FOLDER_SAVETO}/
 
@@ -232,6 +247,6 @@ echo -e "  🎌 Finished"
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-printf "%-25s | %-30s\n" "  #️⃣  ${ARG_SAVEFILE}" "${COUNT_LINES} Lines | ${COUNT_TOTAL_IP} IPs | ${COUNT_TOTAL_SUBNET} Subnets"
+printf "%-25s | %-30s\n" "  #️⃣  ${ARG_SAVEFILE}" "${COUNT_TOTAL_IP} IPs, ${COUNT_TOTAL_SUBNET} Subnets"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 echo -e

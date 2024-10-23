@@ -104,10 +104,6 @@ fi
 #   Func > Download List
 # #
 
-# #
-#   Func > Download List
-# #
-
 download_list()
 {
 
@@ -135,8 +131,7 @@ download_list()
     #   so we will count every IP in the block.
     # #
 
-    echo -e "Start Read"
-    for line in $(cat ${tempFile}); do
+    while read line; do
         # is subnet
         if [[ $line =~ /[0-9]{1,2}$ ]]; then
             ips=$(( 1 << (32 - ${line#*/}) ))
@@ -160,7 +155,7 @@ download_list()
         elif [[ $line =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`
         fi
-    done
+    done < <(cat ${tempFile})
 
     # #
     #   Count lines and subnets
@@ -210,7 +205,7 @@ if [ -d .github/blocks/ ]; then
         #   so we will count every IP in the block.
         # #
 
-        for line in $(cat ${tempFile}); do
+        while read line; do
             # is subnet
             if [[ $line =~ /[0-9]{1,2}$ ]]; then
                 ips=$(( 1 << (32 - ${line#*/}) ))

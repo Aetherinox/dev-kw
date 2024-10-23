@@ -17,26 +17,20 @@
 2602:80d:1004::/112
 
 # #
-#   Amazon
-# #
-
-34.198.201.66
-3.12.251.153
-54.167.223.174
-35.166.228.98
-52.22.236.30
-3.212.128.62
-3.20.63.178
-52.15.147.27
-44.227.38.253
-35.84.118.171
-18.116.205.62
-
-# #
 #   CariNet, Inc.
+#
+#   a wide variety of bots come from this company (or customers of the company),
+#   including scrapers, brute-forcing, email spam, data collection, etc.
+#
+#   https://raw.githubusercontent.com/cbuijs/ipasn/master/asn/as10439.list
 # #
 
-71.6.134.235
+135.84.216.0/24
+209.126.128.0/17
+216.75.0.0/18
+216.98.128.0/19
+66.240.192.0/18
+71.6.128.0/17
 
 # #
 #   Shodan is a search engine which does not index web sites or web contents,
