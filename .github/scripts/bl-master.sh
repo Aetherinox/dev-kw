@@ -135,7 +135,7 @@ download_list()
     #   so we will count every IP in the block.
     # #
 
-    for i in $(cat ${tempFile}); do
+    for line in $(cat ${tempFile}); do
         # is subnet
         if [[ $line =~ /[0-9]{1,2}$ ]]; then
             ips=$(( 1 << (32 - ${line#*/}) ))
