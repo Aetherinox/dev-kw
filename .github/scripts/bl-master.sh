@@ -135,7 +135,9 @@ download_list()
     #   so we will count every IP in the block.
     # #
 
+    echo -e "Start Read"
     for line in $(cat ${tempFile}); do
+        echo -e $line
         # is subnet
         if [[ $line =~ /[0-9]{1,2}$ ]]; then
             ips=$(( 1 << (32 - ${line#*/}) ))
