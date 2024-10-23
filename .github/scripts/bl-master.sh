@@ -137,7 +137,6 @@ download_list()
 
     echo -e "Start Read"
     for line in $(cat ${tempFile}); do
-        echo -e $line
         # is subnet
         if [[ $line =~ /[0-9]{1,2}$ ]]; then
             ips=$(( 1 << (32 - ${line#*/}) ))
@@ -154,7 +153,6 @@ download_list()
                 COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`            # count IPs in subnet
                 COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`       # count subnet
 
-                echo $COUNT_TOTAL_SUBNET
                 B_IS_SUBNET=true
             fi
 
@@ -212,7 +210,7 @@ if [ -d .github/blocks/ ]; then
         #   so we will count every IP in the block.
         # #
 
-        while read line; do
+        for line in $(cat ${tempFile}); do
             # is subnet
             if [[ $line =~ /[0-9]{1,2}$ ]]; then
                 ips=$(( 1 << (32 - ${line#*/}) ))
