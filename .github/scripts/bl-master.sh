@@ -198,14 +198,9 @@ download_list()
 
     echo -e "  🚛 Move ${tempFile} to ${fnFile}"
     cat ${tempFile} >> ${fnFile}                                    # copy .tmp contents to real file
+    rm ${tempFile}                                                  # delete temp file
 
     echo -e "  ➕ Added ${DL_COUNT_TOTAL_IP} IPs and ${DL_COUNT_TOTAL_SUBNET} subnets to ${fnFile}"
-
-    # #
-    #   Cleanup
-    # #
-
-    rm ${tempFile}
 }
 
 # #

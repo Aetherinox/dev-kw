@@ -197,6 +197,7 @@ BLOCKS_COUNT_TOTAL_SUBNET=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_SUBNET")          
 
 echo -e "  🚛 Move ${tempFile} to ${ARG_SAVEFILE}"
 cat ${tempFile} >> ${ARG_SAVEFILE}                                              # copy .tmp contents to real file
+rm ${tempFile}                                                                  # delete temp file
 
 echo -e "  ➕ Added ${BLOCKS_COUNT_TOTAL_IP} IPs and ${BLOCKS_COUNT_TOTAL_SUBNET} Subnets to ${tempFile}"
 echo -e
