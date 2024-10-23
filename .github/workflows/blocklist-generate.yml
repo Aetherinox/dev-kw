@@ -45,7 +45,7 @@ env:
 jobs:
     build:
         runs-on: ubuntu-22.04
-        timeout-minutes: 3
+        timeout-minutes: 5
         steps:
 
             # #
@@ -132,7 +132,6 @@ jobs:
                   chmod +x ".github/scripts/bl-download.sh"
                   run_spamhaus=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_SPAMHAUS_OUT }} false ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
                   eval "./$run_spamhaus"
-
 
             # #
             #   Generate > Precommit
