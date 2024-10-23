@@ -44,6 +44,21 @@ ARG_SAVEFILE=$1
 ARG_BOOL_DND=$2
 
 # #
+#   Validation checks
+# #
+
+if [[ -z "${ARG_SAVEFILE}" ]]; then
+    echo -e "  ⭕ No output file specified for downloader script"
+    echo -e
+    exit 1
+fi
+
+if [[ -z "${ARG_BOOL_DND}" ]]; then
+    echo -e "  ⭕  Aborting -- DND not specified"
+    exit 1
+fi
+
+# #
 #    Define > General
 # #
 
