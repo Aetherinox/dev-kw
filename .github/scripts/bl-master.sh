@@ -117,7 +117,7 @@ download_list()
 
     echo -e "  🌎 Downloading IP blacklist ${fnUrl} to ${tempFile}"
 
-    curl -H ${fnUrl} -o ${tempFile} >               # download file
+    curl -H ${fnUrl} -o ${tempFile}              # download file
     sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}          # remove # and ; comments
     sed -i 's/\-.*//' ${tempFile}                               # remove hyphens for ip ranges
     sed -i 's/[[:blank:]]*$//' ${tempFile}                      # remove space / tab from EOL
