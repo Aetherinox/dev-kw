@@ -4,7 +4,10 @@
 #   @for                https://github.com/Aetherinox/csf-firewall
 #   @assoc              blocklist-generate.yml
 #   @type               bash script
-#   
+#   @summary            Uses a URL to fetch a plaintext file from the internet.
+#                       It then reads each line, counts how many IP addresses and subnets it contains, and removes 
+#                       any comments the original file had, including text that starts with the characters `;` and `#`.
+#                       Supports multiple URLs as arguments.
 #                       📁 .github
 #                           📁 scripts
 #                               📄 bl-download.sh
@@ -56,6 +59,7 @@ fi
 # #
 
 FOLDER_SAVETO="blocklists"
+SECONDS=0
 NOW=`date -u`
 COUNT_LINES=0                   # number of lines in doc
 COUNT_TOTAL_SUBNET=0            # number of IPs in all subnets combined
@@ -143,8 +147,13 @@ download_list()
     # #
 
     for line in $(cat ${tempFile}); do
+        # is ipv6
+        if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
+            COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`               # GLOBAL count subnet
+            DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + 1`         # LOCAL count subnet
+
         # is subnet
-        if [[ $line =~ /[0-9]{1,2}$ ]]; then
+        elif [[ $line =~ /[0-9]{1,2}$ ]]; then
             ips=$(( 1 << (32 - ${line#*/}) ))
 
             regexIsNum='^[0-9]+$'
@@ -250,7 +259,15 @@ mv ${ARG_SAVEFILE} ${FOLDER_SAVETO}/
 #   Finished
 # #
 
+T=$SECONDS
 echo -e "  🎌 Finished"
+
+# #
+#   Run time
+# #
+
+echo -e
+printf "  🕙 Elapsed time: %02d days %02d hrs %02d mins %02d secs\n" "$((T/86400))" "$((T/3600%24))" "$((T/60%60))" "$((T%60))"
 
 # #
 #   Output
@@ -260,4 +277,6 @@ echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 printf "%-25s | %-30s\n" "  #️⃣  ${ARG_SAVEFILE}" "${COUNT_TOTAL_IP} IPs, ${COUNT_TOTAL_SUBNET} Subnets"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
+echo -e
+echo -e
 echo -e
