@@ -120,42 +120,6 @@ jobs:
                   eval "./$run_highrisk"
 
     # #
-    #   Job > Blocklist > Privacy
-    # #
-
-    blocklist-generate-privacy:
-      name: >-
-        📋 Generate › Privacy
-      runs-on: apollo-x64
-      needs: [ blocklist-setup ]
-      steps:
-
-            # #
-            #   Generate > Checkout
-            # #
-
-            - name: "☑️ Checkout"
-              id: task_blocklist_privacy_checkout
-              uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
-
-            # #
-            #   Generate > Privacy
-            # #
-
-            - name: "🧱 Generate › Privacy"
-              id: task_blocklist_privacy_generate
-              run: |
-                  chmod +x ".github/scripts/bl-static.sh"
-                  run_general=".github/scripts/bl-static.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
-                  eval "./$run_general"
-
-                  chmod +x ".github/scripts/bl-json.sh"
-                  run_cloudfront=".github/scripts/bl-json.sh ${{ vars.API_02_CLOUDFRONT_OUT }} ${{ secrets.API_02_CLOUDFRONT_URL }} 'map(.[]) | sort | .[]'"
-                  eval "./$run_cloudfront"
-
-    # #
     #   Job > Blocklist > Spam
     # #
 
