@@ -120,38 +120,6 @@ jobs:
                   eval "./$run_highrisk"
 
     # #
-    #   Job > Blocklist > Spam
-    # #
-
-    blocklist-generate-spam:
-      name: >-
-        📋 Generate › Spam
-      runs-on: apollo-x64
-      needs: [ blocklist-setup ]
-      steps:
-
-            # #
-            #   Generate > Checkout
-            # #
-
-            - name: "☑️ Checkout"
-              id: task_blocklist_spam_checkout
-              uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
-
-            # #
-            #   Generate > Spam
-            # #
-
-            - name: "🧱 Generate › Spam"
-              id: task_blocklist_spam_generate
-              run: |
-                  chmod +x ".github/scripts/bl-download.sh"
-                  run_spamhaus=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_SPAMHAUS_OUT }} false ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
-                  eval "./$run_spamhaus"
-
-    # #
     #   Job > Commit
     # #
 
@@ -159,8 +127,18 @@ jobs:
       name: >-
         📋 Commit
       runs-on: apollo-x64
-      needs: [ blocklist-setup, blocklist-generate-master, blocklist-generate-privacy, blocklist-generate-spam ]
+      needs: [ blocklist-setup, blocklist-generate-master ]
       steps:
+
+            # #
+            #   Generate > Checkout
+            # #
+
+            - name: "☑️ Checkout"
+              id: task_blocklist_master_checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
 
             # #
             #   Commit > Precommit
