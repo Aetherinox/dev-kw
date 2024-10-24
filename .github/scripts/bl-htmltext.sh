@@ -4,14 +4,15 @@
 #   @for                https://github.com/Aetherinox/csf-firewall
 #   @assoc              blocklist-generate.yml
 #   @type               bash script
-#   @summary            copies local ipsets from .github/blocks/${ARG_BLOCKS_CAT}/*.ipset
+#   @summary            fetches a website using curl, converts all of the html over to plain text, and then grep can be used to extract
+#                       data
 #   
 #                       📁 .github
 #                           📁 blocks
-#                               📁 privacy
+#                               📁 bruteforce
 #                                   📄 *.txt
 #                           📁 scripts
-#                               📄 bl-static.sh
+#                               📄 bl-htmltext.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
@@ -43,7 +44,8 @@
 # #
 
 ARG_SAVEFILE=$1
-ARG_BLOCKS_CAT=$2
+ARG_URL=$2
+ARG_GREP=$3
 
 # #
 #   Validation checks
@@ -55,8 +57,13 @@ if [[ -z "${ARG_SAVEFILE}" ]]; then
     exit 1
 fi
 
-if [[ -z "${ARG_BLOCKS_CAT}" ]]; then
-    echo -e "  ⭕  Aborting -- no static file category specified. ex: privacy"
+if [[ -z "${ARG_URL}" ]]; then
+    echo -e "  ⭕  Aborting -- no url specified"
+    exit 1
+fi
+
+if [[ -z "${ARG_GREP}" ]]; then
+    echo -e "  ⭕  Aborting -- no grep query specified"
     exit 1
 fi
 
@@ -73,6 +80,7 @@ COUNT_TOTAL_IP=0                        # number of single IPs (counts each line
 ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"    # ipset id, /description/* and /category/* files must match this value
 DESCRIPTION=$(curl -sS "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/descriptions/${ID}.txt")
 CATEGORY=$(curl -sS "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/categories/${ID}.txt")
+DAYS=$(curl -sS "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/days/${ID}.txt")
 regexURL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 
 # #
@@ -89,7 +97,7 @@ DAYS=$([ "${DAYS}" == *"404: Not Found"* ] && echo "6 hours" || echo "${DAYS}")
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-echo -e "  Blocklist - ${ARG_SAVEFILE} (${ARG_BLOCKS_CAT})"
+echo -e "  Blocklist - ${ARG_SAVEFILE}"
 echo -e "  ID:         ${ID}"
 echo -e "  CATEGORY:   ${CATEGORY}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
@@ -116,96 +124,90 @@ else
 fi
 
 # #
-#   Add Static Files
+#   Get IP list
 # #
 
-if [ -d .github/blocks/ ]; then
-	for tempFile in .github/blocks/${ARG_BLOCKS_CAT}/*.ipset; do
-		echo -e "  📒 Adding static file ${tempFile}"
-
-        # #
-        #   calculate how many IPs are in a subnet
-        #   if you want to calculate the USABLE IP addresses, subtract -2 from any subnet not ending with 31 or 32.
-        #   
-        #   for our purpose, we want to block them all in the event that the network has reconfigured their network / broadcast IPs,
-        #   so we will count every IP in the block.
-        # #
-
-        BLOCKS_COUNT_TOTAL_IP=0
-        BLOCKS_COUNT_TOTAL_SUBNET=0
-
-        for line in $(cat ${tempFile}); do
-
-            # is ipv6
-            if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
-                if [[ $line =~ /[0-9]{1,3}$ ]]; then
-                    COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`                       # GLOBAL count subnet
-                    BLOCKS_COUNT_TOTAL_SUBNET=`expr $BLOCKS_COUNT_TOTAL_SUBNET + 1`         # LOCAL count subnet
-                else
-                    COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`                               # GLOBAL count ip
-                    BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + 1`                 # LOCAL count ip
-                fi
-
-            # is subnet
-            elif [[ $line =~ /[0-9]{1,2}$ ]]; then
-                ips=$(( 1 << (32 - ${line#*/}) ))
-
-                regexIsNum='^[0-9]+$'
-                if [[ $ips =~ $regexIsNum ]]; then
-                    CIDR=$(echo $line | sed 's:.*/::')
-
-                    # subtract - 2 from any cidr not ending with 31 or 32
-                    # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
-                        # BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP - 2`
-                        # COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP - 2`
-                    # fi
-
-                    BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + $ips`          # LOCAL count IPs in subnet
-                    BLOCKS_COUNT_TOTAL_SUBNET=`expr $BLOCKS_COUNT_TOTAL_SUBNET + 1`     # LOCAL count subnet
-
-                    COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`                        # GLOBAL count IPs in subnet
-                    COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`                   # GLOBAL count subnet
-                fi
-
-            # is normal IP
-            elif [[ $line =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + 1`
-                COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`
-            fi
-        done
-
-        # #
-        #   Count lines and subnets
-        # #
-
-        COUNT_LINES=$(wc -l < ${tempFile})                                              # GLOBAL count ip lines
-        COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                                      # GLOBAL add commas to thousands
-        COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")                                # GLOBAL add commas to thousands
-        COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                        # GLOBAL add commas to thousands
-
-        BLOCKS_COUNT_TOTAL_IP=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_IP")                  # LOCAL add commas to thousands
-        BLOCKS_COUNT_TOTAL_SUBNET=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_SUBNET")          # LOCAL add commas to thousands
-
-        echo -e "  🚛 Move ${tempFile} to ${ARG_SAVEFILE}"
-        cat ${tempFile} >> ${ARG_SAVEFILE}                                              # copy .tmp contents to real file
-
-        echo -e "  ➕ Added ${BLOCKS_COUNT_TOTAL_IP} IPs and ${BLOCKS_COUNT_TOTAL_SUBNET} Subnets to ${tempFile}"
-        echo -e
-	done
-fi
+echo -e "  🌎 Downloading IP blacklist to ${ARG_SAVEFILE}"
 
 # #
-#   Sort
-#       - sort lines numerically and create .sort file
-#       - move re-sorted text from .sort over to real file
-#       - remove .sort temp file
+#   Get IP list
 # #
 
-sorting=$(cat ${ARG_SAVEFILE} | grep -v "^#" | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${ARG_SAVEFILE}.sort)
-sed -i 's/[[:blank:]]*$//' ${ARG_SAVEFILE}.sort
-> ${ARG_SAVEFILE}
-cat ${ARG_SAVEFILE}.sort >> ${ARG_SAVEFILE}
-rm ${ARG_SAVEFILE}.sort
+tempFile="${ARG_SAVEFILE}.tmp"
+jsonOutput=$(curl -Ss ${ARG_URL} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
+sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                              # remove # and ; comments
+sed -i 's/\-.*//' ${tempFile}                                                   # remove hyphens for ip ranges
+sed -i 's/[[:blank:]]*$//' ${tempFile}                                          # remove space / tab from EOL
+
+# #
+#   calculate how many IPs are in a subnet
+#   if you want to calculate the USABLE IP addresses, subtract -2 from any subnet not ending with 31 or 32.
+#   
+#   for our purpose, we want to block them all in the event that the network has reconfigured their network / broadcast IPs,
+#   so we will count every IP in the block.
+# #
+
+BLOCKS_COUNT_TOTAL_IP=0
+BLOCKS_COUNT_TOTAL_SUBNET=0
+
+for line in $(cat ${tempFile}); do
+
+    # is ipv6
+    if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
+        if [[ $line =~ /[0-9]{1,3}$ ]]; then
+            COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`                       # GLOBAL count subnet
+            BLOCKS_COUNT_TOTAL_SUBNET=`expr $BLOCKS_COUNT_TOTAL_SUBNET + 1`         # LOCAL count subnet
+        else
+            COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`                               # GLOBAL count ip
+            BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + 1`                 # LOCAL count ip
+        fi;
+
+    # is subnet
+    elif [[ $line =~ /[0-9]{1,2}$ ]]; then
+        ips=$(( 1 << (32 - ${line#*/}) ))
+
+        regexIsNum='^[0-9]+$'
+        if [[ $ips =~ $regexIsNum ]]; then
+            CIDR=$(echo $line | sed 's:.*/::')
+
+            # subtract - 2 from any cidr not ending with 31 or 32
+            # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
+                # BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP - 2`
+                # COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP - 2`
+            # fi
+
+            BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + $ips`          # LOCAL count IPs in subnet
+            BLOCKS_COUNT_TOTAL_SUBNET=`expr $BLOCKS_COUNT_TOTAL_SUBNET + 1`     # LOCAL count subnet
+
+            COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`                        # GLOBAL count IPs in subnet
+            COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`                   # GLOBAL count subnet
+        fi
+
+    # is normal IP
+    elif [[ $line =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + 1`
+        COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`
+    fi
+done
+
+# #
+#   Count lines and subnets
+# #
+
+COUNT_LINES=$(wc -l < ${tempFile})                                              # GLOBAL count ip lines
+COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                                      # GLOBAL add commas to thousands
+COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")                                # GLOBAL add commas to thousands
+COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                        # GLOBAL add commas to thousands
+
+BLOCKS_COUNT_TOTAL_IP=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_IP")                  # LOCAL add commas to thousands
+BLOCKS_COUNT_TOTAL_SUBNET=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_SUBNET")          # LOCAL add commas to thousands
+
+echo -e "  🚛 Move ${tempFile} to ${ARG_SAVEFILE}"
+cat ${tempFile} >> ${ARG_SAVEFILE}                                              # copy .tmp contents to real file
+rm ${tempFile}                                                                  # delete temp file
+
+echo -e "  ➕ Added ${BLOCKS_COUNT_TOTAL_IP} IPs and ${BLOCKS_COUNT_TOTAL_SUBNET} Subnets to ${tempFile}"
+echo -e
 
 # #
 #   ed
@@ -223,7 +225,7 @@ ed -s ${ARG_SAVEFILE} <<END_ED
 #   @entries        $COUNT_TOTAL_IP ips
 #                   $COUNT_TOTAL_SUBNET subnets
 #                   $COUNT_LINES lines
-#   @expires        6 hours
+#   @expires        15 days
 #   @category       ${CATEGORY}
 #
 ${DESCRIPTION}
