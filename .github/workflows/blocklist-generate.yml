@@ -10,9 +10,16 @@
 #   local test requires the same structure as the github workflow
 #       📁 .github
 #           📁 blocks
-#               📄 1.txt
+#               📁 bruteforce
+#                   📄 01.ipset
+#               📁 privacy
+#                   📄 01.ipset
 #           📁 scripts
 #               📄 bl-download.sh
+#               📄 bl-htmltext.sh
+#               📄 bl-json.sh
+#               📄 bl-master.sh
+#               📄 bl-static.sh
 #           📁 workflows
 #               📄 blocklist-generate.yml
 # #
@@ -43,16 +50,19 @@ env:
 # #
 
 jobs:
-    build:
+
+    # #
+    #   Job > Setup
+    # #
+
+    blocklist-setup:
+        name: >-
+          📦 Setup
         runs-on: apollo-x64
         steps:
 
-            # #
-            #   Job > Start
-            # #
-
             - name: "✅ Start"
-              id: task_build_start
+              id: task_setup_start
               run: |
                 echo "Starting blocklist build script"
 
@@ -61,7 +71,7 @@ jobs:
             # #
 
             - name: "☑️ Checkout"
-              id: task_build_checkout
+              id: task_setup_checkout
               uses: actions/checkout@v4
               with:
                 fetch-depth: 0
@@ -71,33 +81,75 @@ jobs:
             # #
 
             - name: "🧱 Install Packages"
-              id: task_build_shell_install
+              id: task_setup_install
               run: |
                   sudo apt-get install -y ipcalc
                   sudo apt-get install -y ed
                   sudo apt-get install -y html2text
+
+    # #
+    #   Job > Blocklist > Master
+    # #
+
+    blocklist-generate-master:
+        name: >-
+          📋 Generate › Master
+        runs-on: apollo-x64
+        needs: [ blocklist-setup ]
+        steps:
+
+            # #
+            #   Generate > Checkout
+            # #
+
+            - name: "☑️ Checkout"
+              id: task_blocklist_master_checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
 
             # #
             #   Generate > Master
             # #
 
             - name: "🧱 Generate › Master"
-              id: task_build_generate_master
+              id: task_blocklist_master_generate
               run: |
                   chmod +x ".github/scripts/bl-master.sh"
-                  run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} false ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }}"
+                  run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} false ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }} ${{ secrets.API_01_FILE_04 }} ${{ secrets.API_01_FILE_05 }} ${{ secrets.API_01_FILE_06 }} ${{ secrets.API_01_FILE_07 }} ${{ secrets.API_01_FILE_08 }}"
                   eval "./$run_master"
 
-                  chmod +x ".github/scripts/bl-highrisk.sh"
-                  run_highrisk=".github/scripts/bl-highrisk.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
+                  chmod +x ".github/scripts/bl-htmltext.sh"
+                  run_highrisk=".github/scripts/bl-htmltext.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
                   eval "./$run_highrisk"
+
+    # #
+    #   Job > Blocklist > Privacy
+    # #
+
+    blocklist-generate-privacy:
+      name: >-
+        📋 Generate › Privacy
+      runs-on: apollo-x64
+      needs: [ blocklist-setup ]
+      steps:
+
+            # #
+            #   Generate > Checkout
+            # #
+
+            - name: "☑️ Checkout"
+              id: task_blocklist_privacy_checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
 
             # #
             #   Generate > Privacy
             # #
 
             - name: "🧱 Generate › Privacy"
-              id: task_build_generate_privacy
+              id: task_blocklist_privacy_generate
               run: |
                   chmod +x ".github/scripts/bl-static.sh"
                   run_general=".github/scripts/bl-static.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
@@ -127,23 +179,55 @@ jobs:
                   run_amz_ec2=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_EC2_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
                   eval "./$run_amz_ec2"
 
+    # #
+    #   Job > Blocklist > Spam
+    # #
+
+    blocklist-generate-spam:
+      name: >-
+        📋 Generate › Spam
+      runs-on: apollo-x64
+      needs: [ blocklist-setup ]
+      steps:
+
+            # #
+            #   Generate > Checkout
+            # #
+
+            - name: "☑️ Checkout"
+              id: task_blocklist_spam_checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+
             # #
             #   Generate > Spam
             # #
 
             - name: "🧱 Generate › Spam"
-              id: task_build_generate_spam
+              id: task_blocklist_spam_generate
               run: |
                   chmod +x ".github/scripts/bl-download.sh"
                   run_spamhaus=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_SPAMHAUS_OUT }} false ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
                   eval "./$run_spamhaus"
 
+    # #
+    #   Job > Commit
+    # #
+
+    blocklist-commit:
+      name: >-
+        📋 Commit
+      runs-on: apollo-x64
+      needs: [ blocklist-setup, blocklist-generate-master, blocklist-generate-privacy, blocklist-generate-spam ]
+      steps:
+
             # #
-            #   Generate > Precommit
+            #   Commit > Precommit
             # #
 
             - name: "📦 Pre-commit"
-              id: task_build_precommit
+              id: task_commit_pre
               run: |
                   now=$(date '+%m/%d/%Y %H:%M')
                   commit_label="Sync" >> $GITHUB_ENV
@@ -152,11 +236,11 @@ jobs:
                   echo "NOW=$(echo $now)" >> $GITHUB_ENV
 
             # #
-            #   Generate > Commit
+            #   Commit > Commit
             # #
 
             - name: "📦 Commit"
-              id: task_build_commit
+              id: task_commit_execute
               uses: stefanzweifel/git-auto-commit-action@v5
               with:
                   commit_message: ${{ env.COMMIT_MESSAGE }}
