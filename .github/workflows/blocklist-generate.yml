@@ -137,7 +137,7 @@ jobs:
       name: >-
         📋 Generate › Privacy
       runs-on: apollo-x64
-      needs: [ blocklist-setup ]
+      needs: [ blocklist-setup, blocklist-generate-master ]
       steps:
 
             # #
@@ -181,7 +181,7 @@ jobs:
       name: >-
         📋 Generate › Spam
       runs-on: apollo-x64
-      needs: [ blocklist-setup ]
+      needs: [ blocklist-setup, blocklist-generate-privacy ]
       steps:
 
             # #
