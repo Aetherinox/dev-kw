@@ -91,7 +91,7 @@ jobs:
     #   Job > Blocklist > Master
     # #
 
-    blocklist-generate-master:
+    blocklist-generate:
         name: >-
           📋 Generate › Blocklist
         runs-on: apollo-x64
@@ -189,7 +189,7 @@ jobs:
       name: >-
         📋 Commit
       runs-on: apollo-x64
-      needs: [ blocklist-setup, blocklist-generate-master, blocklist-generate-privacy, blocklist-generate-spam ]
+      needs: [ blocklist-setup, blocklist-generate ]
       steps:
 
             # #
