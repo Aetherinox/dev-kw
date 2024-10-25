@@ -118,10 +118,6 @@ jobs:
             - name: "🧱 Generate › Master"
               id: task_blocklist_master_generate
               run: |
-                  chmod +x ".github/scripts/bl-master.sh"
-                  run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} false ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }} ${{ secrets.API_01_FILE_04 }} ${{ secrets.API_01_FILE_05 }} ${{ secrets.API_01_FILE_06 }} ${{ secrets.API_01_FILE_07 }} ${{ secrets.API_01_FILE_08 }}"
-                  eval "./$run_master"
-
                   chmod +x ".github/scripts/bl-htmltext.sh"
                   run_highrisk=".github/scripts/bl-htmltext.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
                   eval "./$run_highrisk"
@@ -157,34 +153,6 @@ jobs:
                   chmod +x ".github/scripts/bl-static.sh"
                   run_general=".github/scripts/bl-static.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
                   eval "./$run_general"
-
-                  chmod +x ".github/scripts/bl-json.sh"
-                  run_google=".github/scripts/bl-json.sh ${{ vars.API_02_GOOGLE_OUT }} ${{secrets.API_02_GOOGLE_URL}} '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
-                  eval "./$run_google"
-
-                  chmod +x ".github/scripts/bl-json.sh"
-                  run_cloudfront=".github/scripts/bl-json.sh ${{ vars.API_02_CLOUDFRONT_OUT }} ${{ secrets.API_02_CLOUDFRONT_URL }} 'map(.[]) | sort | .[]'"
-                  eval "./$run_cloudfront"
-
-                  chmod +x ".github/scripts/bl-json.sh"
-                  run_bing=".github/scripts/bl-json.sh ${{ vars.API_02_BING_OUT }} ${{ secrets.API_02_BING_URL }} '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
-                  eval "./$run_bing"
-                
-                  chmod +x ".github/scripts/bl-json.sh"
-                  run_fastly=".github/scripts/bl-json.sh ${{ vars.API_02_FASTLY_OUT }} ${{ secrets.API_02_FASTLY_URL }} 'map(.[]) | .[]'"
-                  eval "./$run_fastly"
-
-                  chmod +x ".github/scripts/bl-json.sh"
-                  run_amz_aws=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_AWS_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"AMAZON\") | .ip_prefix'"
-                  eval "./$run_amz_aws"
-
-                  chmod +x ".github/scripts/bl-json.sh"
-                  run_amz_ec2=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_EC2_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
-                  eval "./$run_amz_ec2"
-
-                  chmod +x ".github/scripts/bl-htm.sh"
-                  run_yandex=".github/scripts/bl-htm.sh ${{ vars.API_02_YANDEX_OUT }} ${{ secrets.API_02_YANDEX_URL }}"
-                  eval "./$run_yandex"
 
     # #
     #   Job > Blocklist > Spam
@@ -251,7 +219,7 @@ jobs:
               id: task_blocklist_master_checkout
               uses: actions/checkout@v4
               with:
-                fetch-depth: 0
+                fetch-depth: 1
 
             # #
             #   Commit > Precommit
