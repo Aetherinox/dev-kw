@@ -157,6 +157,18 @@ jobs:
                   chmod +x ".github/scripts/bl-json.sh"
                   run_amz_ec2=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_EC2_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
                   eval "./$run_amz_ec2"
+                  
+                  chmod +x ".github/scripts/bl-htm.sh"
+                  run_yandex=".github/scripts/bl-htm.sh ${{ vars.API_02_YANDEX_OUT }} ${{ secrets.API_02_YANDEX_URL }}"
+                  eval "./$run_yandex"
+
+                  chmod +x ".github/scripts/bl-htm.sh"
+                  run_apple_bot=".github/scripts/bl-htm.sh ${{ vars.API_02_APPLE_BOT_OUT }} ${{ secrets.API_02_APPLE_BOT_URL }}"
+                  eval "./$run_apple_bot"
+
+                  chmod +x ".github/scripts/bl-htm.sh"
+                  run_facebook_bot=".github/scripts/bl-htm.sh ${{ vars.API_02_FACEBOOK_BOT_OUT }} ${{ secrets.API_02_FACEBOOK_BOT_URL }}"
+                  eval "./$run_facebook_bot"
 
             # #
             #   Generate > Spam
@@ -175,7 +187,7 @@ jobs:
 
             - name: "🎁 Generate › Upload Artifact"
               id: task_blocklist_generate_artifact_upload
-              uses: actions/upload-artifact@master
+              uses: actions/upload-artifact@v4
               with:
                   name: blocklist-latest
                   path: ./blocklists
@@ -208,11 +220,10 @@ jobs:
 
             - name: "🎁 Commit › Download Artifact"
               id: task_commit_artifact_download
-              uses: actions/download-artifact@master
+              uses: actions/download-artifact@v4
               with:
                   name: blocklist-latest
                   path: ./blocklists
-                  retention-days: 1
 
             # #
             #   Commit > Precommit
