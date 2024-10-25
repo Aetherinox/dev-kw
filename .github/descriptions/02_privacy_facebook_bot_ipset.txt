@@ -1,0 +1,3 @@
+#   This list contains ip addresses associated with Facebook bots / crawlers.
+#   
+#   These are useful if you do not wish for Facebook to crawl your data.

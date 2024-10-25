@@ -4,16 +4,11 @@
 #   @for                https://github.com/Aetherinox/csf-firewall
 #   @assoc              blocklist-generate.yml
 #   @type               bash script
-#   @summary            Uses a URL to download various files from online websites.
-#                       At the end, it also fetches any file inside `github/blocks/bruteforce/*` and adds those IPs to the end of the file.
-#                       Supports multiple URLs as arguments.
+#   @summary            fetches ip lists from an API source and formats them into a compatible ipset list
 #   
 #                       📁 .github
-#                           📁 blocks
-#                               📁 bruteforce
-#                                   📄 *.txt
 #                           📁 scripts
-#                               📄 bl-master.sh
+#                               📄 bl-htm.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
@@ -21,17 +16,17 @@
 #       - .github/workflows/blocklist-generate.yml
 #
 #   within github workflow, run:
-#       chmod +x ".github/scripts/bl-master.sh"
-#       run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} false ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }}"
-#       eval "./$run_master"
+#       chmod +x ".github/scripts/bl-htm.sh"
+#       run_yandex=".github/scripts/bl-htm.sh ${{ vars.API_02_YANDEX_OUT }} ${{ secrets.API_02_YANDEX_01 }}"
+#       eval "./$run_yandex"
 #
-#   downloads a list of .txt / .ipset IP addresses in single file.
-#   generates a header to place at the top.
-#   
-#   @uage               bl-master.sh <ARG_SAVEFILE> <ARG_BOOL_DND:false|true> [ <URL_BL_1>, <URL_BL_1> {...} ]
-#                       bl-master.sh 01_master.ipset false API_URL_1 
-#                       bl-master.sh 01_master.ipset true API_URL_1 API_URL_2 API_URL_3
+#   IP addresses in static file are cleaned up to remove comments, and then saved to a new file
+#   within the public blocklists folder within the repository.
+#
+#   @uage               bl-htm.sh <ARG_SAVEFILE> [ <URL_BL_1>, <URL_BL_1> {...} ]
+#                       bl-htm.sh 02_privacy_yandex.ipset <API_URL_1>
 # #
+
 
 # #
 #   Arguments
@@ -39,12 +34,10 @@
 #   This bash script has the following arguments:
 #
 #       ARG_SAVEFILE        (str)       file to save IP addresses into
-#       ARG_BOOL_DND        (bool)      add `#do not delete` to end of each line
 #       { ... }             (varg)      list of URLs to API end-points
 # #
 
 ARG_SAVEFILE=$1
-ARG_BOOL_DND=$2
 
 # #
 #   Validation checks
@@ -56,12 +49,7 @@ if [[ -z "${ARG_SAVEFILE}" ]]; then
     exit 1
 fi
 
-if [[ -z "${ARG_BOOL_DND}" ]]; then
-    echo -e "  ⭕  Aborting -- DND not specified"
-    exit 1
-fi
-
-if test "$#" -lt 3; then
+if test "$#" -lt 2; then
     echo -e "  ⭕  Aborting -- did not provide URL arguments"
     exit 1
 fi
@@ -138,16 +126,11 @@ download_list()
 
     echo -e "  🌎 Downloading IP blacklist to ${tempFile}"
 
-    curl -sS -A "${CURL_AGENT}" ${fnUrl} -o ${tempFile} >/dev/null 2>&1     # download file
+    jsonOutput=$(curl -Ss -A "${CURL_AGENT}" ${fnUrl} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
     sed -i 's/\-.*//' ${tempFile}                                           # remove hyphens for ip ranges
     sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                      # remove # and ; comments
     sed -i 's/[[:blank:]]*$//' ${tempFile}                                  # remove space / tab from EOL
     sed -i '/^\s*$/d' ${tempFile}                                           # remove empty lines
-
-    if [ "$ARG_BOOL_DND" = true ] ; then
-        echo -e "  ⭕ Enabled \`# do not delete\`"
-        sed -i 's/$/\t\t\t\#\ do\ not\ delete/' ${tempFile}                 # add csf `# do not delete` to end of each line
-    fi
 
     # #
     #   calculate how many IPs are in a subnet
@@ -213,79 +196,12 @@ download_list()
 #   Download lists
 # #
 
-for arg in "${@:3}"; do
+for arg in "${@:2}"; do
     if [[ $arg =~ $regexURL ]]; then
         download_list ${arg} ${ARG_SAVEFILE}
         echo -e
     fi
 done
-
-# #
-#   Add Static Files
-# #
-
-if [ -d .github/blocks/ ]; then
-	for tempFile in .github/blocks/bruteforce/*.ipset; do
-		echo -e "  📒 Adding static file ${tempFile}"
-
-        # #
-        #   calculate how many IPs are in a subnet
-        #   if you want to calculate the USABLE IP addresses, subtract -2 from any subnet not ending with 31 or 32.
-        #   
-        #   for our purpose, we want to block them all in the event that the network has reconfigured their network / broadcast IPs,
-        #   so we will count every IP in the block.
-        # #
-
-        BLOCKS_COUNT_TOTAL_IP=0
-        BLOCKS_COUNT_TOTAL_SUBNET=0
-
-        for line in $(cat ${tempFile}); do
-            if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
-                COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`                       # GLOBAL count subnet
-                BLOCKS_COUNT_TOTAL_SUBNET=`expr $BLOCKS_COUNT_TOTAL_SUBNET + 1`         # LOCAL count subnet
-
-            # is subnet
-            elif [[ $line =~ /[0-9]{1,2}$ ]]; then
-                ips=$(( 1 << (32 - ${line#*/}) ))
-
-                regexIsNum='^[0-9]+$'
-                if [[ $ips =~ $regexIsNum ]]; then
-                    CIDR=$(echo $line | sed 's:.*/::')
-
-                    # subtract - 2 from any cidr not ending with 31 or 32
-                    # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
-                        # BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP - 2`
-                        # COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP - 2`
-                    # fi
-
-                    BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + $ips`          # LOCAL count IPs in subnet
-                    BLOCKS_COUNT_TOTAL_SUBNET=`expr $BLOCKS_COUNT_TOTAL_SUBNET + 1`     # LOCAL count subnet
-
-                    COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`                        # GLOBAL count IPs in subnet
-                    COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`                   # GLOBAL count subnet
-                fi
-
-            # is normal IP
-            elif [[ $line =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + 1`
-                COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`
-            fi
-        done
-
-        # #
-        #   Count lines and subnets
-        # #
-
-        BLOCKS_COUNT_TOTAL_IP=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_IP")                  # LOCAL add commas to thousands
-        BLOCKS_COUNT_TOTAL_SUBNET=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_SUBNET")          # LOCAL add commas to thousands
-
-        echo -e "  🚛 Move ${tempFile} to ${ARG_SAVEFILE}"
-        cat ${tempFile} >> ${ARG_SAVEFILE}                                              # copy .tmp contents to real file
-
-        echo -e "  ➕ Added ${BLOCKS_COUNT_TOTAL_IP} IPs and ${BLOCKS_COUNT_TOTAL_SUBNET} Subnets to ${tempFile}"
-        echo -e
-	done
-fi
 
 # #
 #   Sort

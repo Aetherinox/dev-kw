@@ -4,8 +4,10 @@
 #   
 #   used in combination with .github/scripts/bl-download.sh
 #
-#   download AbuseIPDB ip list after list of ips are downloaded, merges them with a static list
-#   that is not updated as often which contains a list of long-term abusive ip addresses
+#   populates all ipsets hosted within the repository, including:
+#       - master list
+#       - spam
+#       - privacy
 #   
 #   local test requires the same structure as the github workflow
 #       📁 .github
@@ -35,7 +37,8 @@ on:
     workflow_dispatch:
 
     schedule:
-        - cron: '0 */6 * * *'
+        - cron: '0 0,6,12,18 * * *'
+        - cron: '0 2 * * *'
 
 # #
 #   environment variables
@@ -115,9 +118,119 @@ jobs:
             - name: "🧱 Generate › Master"
               id: task_blocklist_master_generate
               run: |
+                  chmod +x ".github/scripts/bl-master.sh"
+                  run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} false ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }} ${{ secrets.API_01_FILE_04 }} ${{ secrets.API_01_FILE_05 }} ${{ secrets.API_01_FILE_06 }} ${{ secrets.API_01_FILE_07 }} ${{ secrets.API_01_FILE_08 }}"
+                  eval "./$run_master"
+
                   chmod +x ".github/scripts/bl-htmltext.sh"
                   run_highrisk=".github/scripts/bl-htmltext.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
                   eval "./$run_highrisk"
+
+    # #
+    #   Job > Blocklist > Privacy
+    # #
+
+    blocklist-generate-privacy:
+      name: >-
+        📋 Generate › Privacy
+      runs-on: apollo-x64
+      needs: [ blocklist-setup ]
+      steps:
+
+            # #
+            #   Generate > Checkout
+            # #
+
+            - name: "☑️ Checkout"
+              id: task_blocklist_privacy_checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+
+            # #
+            #   Generate > Privacy
+            # #
+
+            - name: "🧱 Generate › Privacy"
+              id: task_blocklist_privacy_generate
+              run: |
+                  chmod +x ".github/scripts/bl-static.sh"
+                  run_general=".github/scripts/bl-static.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
+                  eval "./$run_general"
+
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_google=".github/scripts/bl-json.sh ${{ vars.API_02_GOOGLE_OUT }} ${{secrets.API_02_GOOGLE_URL}} '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
+                  eval "./$run_google"
+
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_cloudfront=".github/scripts/bl-json.sh ${{ vars.API_02_CLOUDFRONT_OUT }} ${{ secrets.API_02_CLOUDFRONT_URL }} 'map(.[]) | sort | .[]'"
+                  eval "./$run_cloudfront"
+
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_bing=".github/scripts/bl-json.sh ${{ vars.API_02_BING_OUT }} ${{ secrets.API_02_BING_URL }} '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
+                  eval "./$run_bing"
+                
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_fastly=".github/scripts/bl-json.sh ${{ vars.API_02_FASTLY_OUT }} ${{ secrets.API_02_FASTLY_URL }} 'map(.[]) | .[]'"
+                  eval "./$run_fastly"
+
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_amz_aws=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_AWS_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"AMAZON\") | .ip_prefix'"
+                  eval "./$run_amz_aws"
+
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_amz_ec2=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_EC2_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
+                  eval "./$run_amz_ec2"
+
+                  chmod +x ".github/scripts/bl-htm.sh"
+                  run_yandex=".github/scripts/bl-htm.sh ${{ vars.API_02_YANDEX_OUT }} ${{ secrets.API_02_YANDEX_URL }}"
+                  eval "./$run_yandex"
+
+    # #
+    #   Job > Blocklist > Spam
+    # #
+
+    blocklist-generate-spam:
+      name: >-
+        📋 Generate › Spam
+      runs-on: apollo-x64
+      needs: [ blocklist-setup ]
+      steps:
+
+            # #
+            #   Generate > Checkout
+            # #
+
+            - name: "☑️ Checkout"
+              id: task_blocklist_spam_checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+
+            # #
+            #   Generate > Spam
+            # #
+
+            - name: "🧱 Generate › Spam"
+              id: task_blocklist_spam_generate
+              run: |
+                  chmod +x ".github/scripts/bl-download.sh"
+                  run_spamhaus=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_SPAMHAUS_OUT }} false ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
+                  eval "./$run_spamhaus"
+
+            # #
+            #   Generate > Spam > Forums
+            #
+            #   only updated once per day (at 1am UTC)
+            # #
+
+            - name: "🧱 Generate › Spam › Forums (1/day)"
+              id: task_blocklist_spam_generate_forums
+              if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
+              run: |
+                  chmod +x ".github/scripts/bl-download.sh"
+                  run_forums=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_FORUMS_OUT }} false ${{ secrets.API_03_SPAM_FORUMS_URL }}"
+                  eval "./$run_forums"
 
     # #
     #   Job > Commit
@@ -127,7 +240,7 @@ jobs:
       name: >-
         📋 Commit
       runs-on: apollo-x64
-      needs: [ blocklist-setup, blocklist-generate-master ]
+      needs: [ blocklist-setup, blocklist-generate-master, blocklist-generate-privacy, blocklist-generate-spam ]
       steps:
 
             # #
@@ -149,9 +262,13 @@ jobs:
               run: |
                   now=$(date '+%m/%d/%Y %H:%M')
                   commit_label="Sync" >> $GITHUB_ENV
-                  commit_message="\`️️⚡️ $commit_label ⚡️\` \`$now\`" >> $GITHUB_ENV
+                  commit_message="\`️️🔒 $commit_label 🔒\` \`$now\`" >> $GITHUB_ENV
                   echo "COMMIT_MESSAGE=$(echo $commit_message)" >> $GITHUB_ENV
                   echo "NOW=$(echo $now)" >> $GITHUB_ENV
+
+            # #
+            #   GPG Key
+            # #
 
             - name: "📦 GPG Key"
               id: task_commit_gpg
