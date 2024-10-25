@@ -4,10 +4,8 @@
 #   
 #   used in combination with .github/scripts/bl-download.sh
 #
-#   populates all ipsets hosted within the repository, including:
-#       - master list
-#       - spam
-#       - privacy
+#   download AbuseIPDB ip list after list of ips are downloaded, merges them with a static list
+#   that is not updated as often which contains a list of long-term abusive ip addresses
 #   
 #   local test requires the same structure as the github workflow
 #       📁 .github
@@ -37,8 +35,7 @@ on:
     workflow_dispatch:
 
     schedule:
-        - cron: '0 0,6,12,18 * * *'
-        - cron: '0 2 * * *'
+        - cron: '0 */6 * * *'
 
 # #
 #   environment variables
@@ -96,7 +93,7 @@ jobs:
 
     blocklist-generate-master:
         name: >-
-          📋 Generate › Master
+          📋 Generate › Blocklist
         runs-on: apollo-x64
         needs: [ blocklist-setup ]
         steps:
@@ -106,7 +103,7 @@ jobs:
             # #
 
             - name: "☑️ Checkout"
-              id: task_blocklist_master_checkout
+              id: task_blocklist_generate_checkout
               uses: actions/checkout@v4
               with:
                 fetch-depth: 0
@@ -116,118 +113,71 @@ jobs:
             # #
 
             - name: "🧱 Generate › Master"
-              id: task_blocklist_master_generate
+              id: task_blocklist_generate_master
               run: |
+                  chmod +x ".github/scripts/bl-master.sh"
+                  run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} false ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }} ${{ secrets.API_01_FILE_04 }} ${{ secrets.API_01_FILE_05 }} ${{ secrets.API_01_FILE_06 }} ${{ secrets.API_01_FILE_07 }} ${{ secrets.API_01_FILE_08 }}"
+                  eval "./$run_master"
+
                   chmod +x ".github/scripts/bl-htmltext.sh"
                   run_highrisk=".github/scripts/bl-htmltext.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
                   eval "./$run_highrisk"
-
-            - name: Update changes
-              uses: actions/upload-artifact@master
-              with:
-                  name: blocklist-master
-                  path: ./blocklists
-                  retention-days: 1
-
-    # #
-    #   Job > Blocklist > Privacy
-    # #
-
-    blocklist-generate-privacy:
-      name: >-
-        📋 Generate › Privacy
-      runs-on: apollo-x64
-      needs: [ blocklist-setup, blocklist-generate-master ]
-      steps:
-
-            # #
-            #   Generate > Checkout
-            # #
-
-            - name: "☑️ Checkout"
-              id: task_blocklist_privacy_checkout
-              uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
-
-            - uses: actions/download-artifact@master
-              with:
-                  name: blocklist-master
-                  path: ./blocklists
 
             # #
             #   Generate > Privacy
             # #
 
             - name: "🧱 Generate › Privacy"
-              id: task_blocklist_privacy_generate
+              id: task_blocklist_generate_privacy
               run: |
                   chmod +x ".github/scripts/bl-static.sh"
                   run_general=".github/scripts/bl-static.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
                   eval "./$run_general"
 
-            - name: Update changes
-              uses: actions/upload-artifact@master
-              with:
-                  name: blocklist-privacy
-                  path: ./blocklists
-                  retention-days: 1
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_google=".github/scripts/bl-json.sh ${{ vars.API_02_GOOGLE_OUT }} ${{secrets.API_02_GOOGLE_URL}} '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
+                  eval "./$run_google"
 
-    # #
-    #   Job > Blocklist > Spam
-    # #
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_cloudfront=".github/scripts/bl-json.sh ${{ vars.API_02_CLOUDFRONT_OUT }} ${{ secrets.API_02_CLOUDFRONT_URL }} 'map(.[]) | sort | .[]'"
+                  eval "./$run_cloudfront"
 
-    blocklist-generate-spam:
-      name: >-
-        📋 Generate › Spam
-      runs-on: apollo-x64
-      needs: [ blocklist-setup, blocklist-generate-privacy ]
-      steps:
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_bing=".github/scripts/bl-json.sh ${{ vars.API_02_BING_OUT }} ${{ secrets.API_02_BING_URL }} '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
+                  eval "./$run_bing"
+                
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_fastly=".github/scripts/bl-json.sh ${{ vars.API_02_FASTLY_OUT }} ${{ secrets.API_02_FASTLY_URL }} 'map(.[]) | .[]'"
+                  eval "./$run_fastly"
 
-            # #
-            #   Generate > Checkout
-            # #
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_amz_aws=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_AWS_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"AMAZON\") | .ip_prefix'"
+                  eval "./$run_amz_aws"
 
-            - name: "☑️ Checkout"
-              id: task_blocklist_spam_checkout
-              uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
-
-            - uses: actions/download-artifact@master
-              with:
-                  name: blocklist-privacy
-                  path: ./blocklists
+                  chmod +x ".github/scripts/bl-json.sh"
+                  run_amz_ec2=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_EC2_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
+                  eval "./$run_amz_ec2"
 
             # #
             #   Generate > Spam
             # #
 
             - name: "🧱 Generate › Spam"
-              id: task_blocklist_spam_generate
+              id: task_blocklist_generate_spam
               run: |
                   chmod +x ".github/scripts/bl-download.sh"
                   run_spamhaus=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_SPAMHAUS_OUT }} false ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
                   eval "./$run_spamhaus"
 
             # #
-            #   Generate > Spam > Forums
-            #
-            #   only updated once per day (at 1am UTC)
+            #   Generate  > Artifact > Upload
             # #
 
-            - name: "🧱 Generate › Spam › Forums (1/day)"
-              id: task_blocklist_spam_generate_forums
-              if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
-              run: |
-                  chmod +x ".github/scripts/bl-download.sh"
-                  run_forums=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_FORUMS_OUT }} false ${{ secrets.API_03_SPAM_FORUMS_URL }}"
-                  eval "./$run_forums"
-
-            - name: Update changes
+            - name: "🎁 Generate › Upload Artifact"
+              id: task_blocklist_generate_artifact_upload
               uses: actions/upload-artifact@master
               with:
-                  name: blocklist
+                  name: blocklist-latest
                   path: ./blocklists
                   retention-days: 1
 
@@ -246,22 +196,29 @@ jobs:
             #   Generate > Checkout
             # #
 
-            - name: "☑️ Checkout"
+            - name: "☑️ Commit › Checkout"
               id: task_blocklist_master_checkout
               uses: actions/checkout@v4
               with:
-                fetch-depth: 1
+                fetch-depth: 0
 
-            - uses: actions/download-artifact@master
+            # #
+            #   Generate  > Artifact > Download
+            # #
+
+            - name: "🎁 Commit › Download Artifact"
+              id: task_commit_artifact_download
+              uses: actions/download-artifact@master
               with:
-                  name: blocklist
+                  name: blocklist-latest
                   path: ./blocklists
+                  retention-days: 1
 
             # #
             #   Commit > Precommit
             # #
 
-            - name: "📦 Pre-commit"
+            - name: "📦 Commit › Pre-commit"
               id: task_commit_pre
               run: |
                   now=$(date '+%m/%d/%Y %H:%M')
@@ -274,7 +231,7 @@ jobs:
             #   GPG Key
             # #
 
-            - name: "📦 GPG Key"
+            - name: "📦 Commit › GPG Key"
               id: task_commit_gpg
               uses: crazy-max/ghaction-import-gpg@v6
               with:
@@ -287,7 +244,7 @@ jobs:
             #   Commit > Commit
             # #
 
-            - name: "📦 Commit"
+            - name: "📦 Commit › Execute"
               id: task_commit_execute
               uses: stefanzweifel/git-auto-commit-action@v5
               with:
