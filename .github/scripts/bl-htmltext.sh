@@ -52,7 +52,7 @@ ARG_GREP=$3
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for Google Crawler list"
+    echo -e "  ⭕ No output file specified for bl-htmltext"
     echo -e
     exit 1
 fi
