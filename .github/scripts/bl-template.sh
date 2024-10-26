@@ -54,10 +54,11 @@ COUNT_TOTAL_IP=0                            # number of single IPs (counts each 
 BLOCKS_COUNT_TOTAL_IP=0                     # number of ips for one particular file
 BLOCKS_COUNT_TOTAL_SUBNET=0                 # number of subnets for one particular file
 ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"        # ipset id, /description/* and /category/* files must match this value
-UUID=$(uuidgen -m -N "${ID}" -n @url)    # uuid associated to each release
+UUID=$(uuidgen -m -N "${ID}" -n @url)       # uuid associated to each release
 DESCRIPTION=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/descriptions/${ID}.txt")
 CATEGORY=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/categories/${ID}.txt")
 EXPIRES=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/expires/${ID}.txt")
+URL_SOURCE=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/url-source/${ID}.txt")
 regexURL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 SECONDS=0
 NOW=`date -u`
@@ -76,6 +77,10 @@ fi
 
 if [[ "$EXPIRES" == *"404: Not Found"* ]]; then
     EXPIRES="6 hours"
+fi
+
+if [[ "$URL_SOURCE" == *"404: Not Found"* ]]; then
+    URL_SOURCE="None"
 fi
 
 # #
@@ -260,21 +265,20 @@ echo -e
 #       0a  top of file
 # #
 
-echo -e "  ➕ Injecting header into ${ARG_SAVEFILE}"
-echo -e
-
 ed -s ${ARG_SAVEFILE} <<END_ED
 0a
 # #
 #   🧱 Firewall Blocklist - ${ARG_SAVEFILE}
 #
-#   @url            https://github.com/Aetherinox/csf-firewall
+#   @url            https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/blocklists/${ARG_SAVEFILE}
+#   @source         ${URL_SOURCE}
+#   @updated        ${NOW}
 #   @id             ${ID}
 #   @uuid           ${UUID}
 #   @updated        ${NOW}
-#   @entries        $COUNT_TOTAL_IP ips
-#                   $COUNT_TOTAL_SUBNET subnets
-#                   $COUNT_LINES lines
+#   @entries        ${COUNT_TOTAL_IP} ips
+#                   ${COUNT_TOTAL_SUBNET} subnets
+#                   ${COUNT_LINES} lines
 #   @expires        ${EXPIRES}
 #   @category       ${CATEGORY}
 #
@@ -285,8 +289,6 @@ ${DESCRIPTION}
 w
 q
 END_ED
-
-echo "${ARG_SAVEFILE}"
 
 # #
 #   Move ipset to final location

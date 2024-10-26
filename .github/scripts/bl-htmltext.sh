@@ -71,18 +71,21 @@ fi
 #    Define > General
 # #
 
+FILE_TEMP="${ARG_SAVEFILE}.tmp"
 CURL_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-FOLDER_SAVETO="blocklists"
-SECONDS=0
-NOW=`date -u`
-COUNT_LINES=0                           # number of lines in doc
-COUNT_TOTAL_SUBNET=0                    # number of IPs in all subnets combined
-COUNT_TOTAL_IP=0                        # number of single IPs (counts each line)
-ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"    # ipset id, /description/* and /category/* files must match this value
+FOLDER_SAVE="blocklists"                    # folder where to save .ipset file
+COUNT_LINES=0                               # number of lines in doc
+COUNT_TOTAL_SUBNET=0                        # number of IPs in all subnets combined
+COUNT_TOTAL_IP=0                            # number of single IPs (counts each line)
+ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"        # ipset id, /description/* and /category/* files must match this value
+UUID=$(uuidgen -m -N "${ID}" -n @url)       # uuid associated to each release
 DESCRIPTION=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/descriptions/${ID}.txt")
 CATEGORY=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/categories/${ID}.txt")
 EXPIRES=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/expires/${ID}.txt")
+URL_SOURCE=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/url-source/${ID}.txt")
 regexURL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
+SECONDS=0
+NOW=`date -u`
 
 # #
 #   Default Values
@@ -98,6 +101,10 @@ fi
 
 if [[ "$EXPIRES" == *"404: Not Found"* ]]; then
     EXPIRES="6 hours"
+fi
+
+if [[ "$URL_SOURCE" == *"404: Not Found"* ]]; then
+    URL_SOURCE="None"
 fi
 
 # #
@@ -142,12 +149,11 @@ echo -e "  🌎 Downloading IP blacklist to ${ARG_SAVEFILE}"
 #   Get IP list
 # #
 
-tempFile="${ARG_SAVEFILE}.tmp"
-jsonOutput=$(curl -Ss -A "${CURL_AGENT}" ${ARG_URL} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
-sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                      # remove # and ; comments
-sed -i 's/\-.*//' ${tempFile}                                           # remove hyphens for ip ranges
-sed -i 's/[[:blank:]]*$//' ${tempFile}                                  # remove space / tab from EOL
-sed -i '/^\s*$/d' ${tempFile}                                           # remove empty lines
+jsonOutput=$(curl -Ss -A "${CURL_AGENT}" ${ARG_URL} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${FILE_TEMP})
+sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${FILE_TEMP}                     # remove # and ; comments
+sed -i 's/\-.*//' ${FILE_TEMP}                                          # remove hyphens for ip ranges
+sed -i 's/[[:blank:]]*$//' ${FILE_TEMP}                                 # remove space / tab from EOL
+sed -i '/^\s*$/d' ${FILE_TEMP}                                          # remove empty lines
 
 # #
 #   calculate how many IPs are in a subnet
@@ -160,7 +166,7 @@ sed -i '/^\s*$/d' ${tempFile}                                           # remove
 BLOCKS_COUNT_TOTAL_IP=0
 BLOCKS_COUNT_TOTAL_SUBNET=0
 
-for line in $(cat ${tempFile}); do
+for line in $(cat ${FILE_TEMP}); do
 
     # is ipv6
     if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
@@ -204,7 +210,7 @@ done
 #   Count lines and subnets
 # #
 
-COUNT_LINES=$(wc -l < ${tempFile})                                              # GLOBAL count ip lines
+COUNT_LINES=$(wc -l < ${FILE_TEMP})                                             # GLOBAL count ip lines
 COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                                      # GLOBAL add commas to thousands
 COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")                                # GLOBAL add commas to thousands
 COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                        # GLOBAL add commas to thousands
@@ -212,11 +218,11 @@ COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                        
 BLOCKS_COUNT_TOTAL_IP=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_IP")                  # LOCAL add commas to thousands
 BLOCKS_COUNT_TOTAL_SUBNET=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_SUBNET")          # LOCAL add commas to thousands
 
-echo -e "  🚛 Move ${tempFile} to ${ARG_SAVEFILE}"
-cat ${tempFile} >> ${ARG_SAVEFILE}                                              # copy .tmp contents to real file
-rm ${tempFile}                                                                  # delete temp file
+echo -e "  🚛 Move ${FILE_TEMP} to ${ARG_SAVEFILE}"
+cat ${FILE_TEMP} >> ${ARG_SAVEFILE}                                             # copy .tmp contents to real file
+rm ${FILE_TEMP}                                                                 # delete temp file
 
-echo -e "  ➕ Added ${BLOCKS_COUNT_TOTAL_IP} IPs and ${BLOCKS_COUNT_TOTAL_SUBNET} Subnets to ${tempFile}"
+echo -e "  ➕ Added ${BLOCKS_COUNT_TOTAL_IP} IPs and ${BLOCKS_COUNT_TOTAL_SUBNET} Subnets to ${FILE_TEMP}"
 echo -e
 
 # #
@@ -229,12 +235,15 @@ ed -s ${ARG_SAVEFILE} <<END_ED
 # #
 #   🧱 Firewall Blocklist - ${ARG_SAVEFILE}
 #
-#   @url            https://github.com/Aetherinox/csf-firewall
-#   @id             ${ID}
+#   @url            https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/blocklists/${ARG_SAVEFILE}
+#   @source         ${URL_SOURCE}
 #   @updated        ${NOW}
-#   @entries        $COUNT_TOTAL_IP ips
-#                   $COUNT_TOTAL_SUBNET subnets
-#                   $COUNT_LINES lines
+#   @id             ${ID}
+#   @uuid           ${UUID}
+#   @updated        ${NOW}
+#   @entries        ${COUNT_TOTAL_IP} ips
+#                   ${COUNT_TOTAL_SUBNET} subnets
+#                   ${COUNT_LINES} lines
 #   @expires        ${EXPIRES}
 #   @category       ${CATEGORY}
 #
@@ -250,9 +259,9 @@ END_ED
 #   Move ipset to final location
 # #
 
-echo -e "  🚛 Move ${ARG_SAVEFILE} to ${FOLDER_SAVETO}/${ARG_SAVEFILE}"
-mkdir -p ${FOLDER_SAVETO}/
-mv ${ARG_SAVEFILE} ${FOLDER_SAVETO}/
+echo -e "  🚛 Move ${ARG_SAVEFILE} to ${FOLDER_SAVE}/${ARG_SAVEFILE}"
+mkdir -p ${FOLDER_SAVE}/
+mv ${ARG_SAVEFILE} ${FOLDER_SAVE}/
 
 # #
 #   Finished
