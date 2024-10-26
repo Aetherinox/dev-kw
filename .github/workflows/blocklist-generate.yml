@@ -175,6 +175,24 @@ jobs:
                   #   Privacy > Stripe
                   curl -sS -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_webhooks.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_stripe.ipset
 
+                  #   Privacy > RSS API
+                  curl -sS -A "${{ env.USERAGENT }}" https://rssapi.net/ips.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_rssapi.ipset
+
+                  #   Privacy > WebPageTest
+                  curl -sS -A "${{ env.USERAGENT }}" https://www.webpagetest.org/addresses.php?f=json | jq -r '.data[].addresses[] | select( . != null )' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_webpagetest.ipset
+
+                  #   Privacy > Bunny CDN
+                  BUNNYCDN_IPv4=$(curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://api.bunny.net/system/edgeserverlist/plain)
+                  BUNNYCDN_IPv6=$(curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://api.bunny.net/system/edgeserverlist/ipv6 | jq -r '.[] | select( . != null )')
+                  BUNNYCDN_LIST="${BUNNYCDN_IPv4} ${BUNNYCDN_IPv6}"
+                  echo "$BUNNYCDN_LIST" | .github/scripts/bl-template.sh 02_privacy_bunnycdn.ipset
+
+                  #   Privacy > Cloudflare CDN
+                  CLOUDFLARE_IPv4=$(curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://www.cloudflare.com/ips-v4)
+                  CLOUDFLARE_IPv6=$(curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://www.cloudflare.com/ips-v6)
+                  CLOUDFLARE_LIST="${CLOUDFLARE_IPv4} ${CLOUDFLARE_IPv6}"
+                  echo "$CLOUDFLARE_LIST" | .github/scripts/bl-template.sh 02_privacy_cloudflarecdn.ipset
+
             # #
             #   Generate > Spam
             # #
