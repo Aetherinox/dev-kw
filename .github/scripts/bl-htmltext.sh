@@ -88,9 +88,17 @@ regexURL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=
 #   Default Values
 # #
 
-DESCRIPTION=$([ "${DESCRIPTION}" == *"404: Not Found"* ] && echo "#   No description provided" || echo "${DESCRIPTION}")
-CATEGORY=$([ "${CATEGORY}" == *"404: Not Found"* ] && echo "Uncategorized" || echo "${CATEGORY}")
-EXPIRES=$([ "${EXPIRES}" == *"404: Not Found"* ] && echo "6 hours" || echo "${EXPIRES}")
+if [[ "$DESCRIPTION" == *"404: Not Found"* ]]; then
+    DESCRIPTION="#   No description provided"
+fi
+
+if [[ "$CATEGORY" == *"404: Not Found"* ]]; then
+    CATEGORY="Uncategorized"
+fi
+
+if [[ "$EXPIRES" == *"404: Not Found"* ]]; then
+    EXPIRES="6 hours"
+fi
 
 # #
 #   Output > Header
