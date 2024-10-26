@@ -87,6 +87,7 @@ jobs:
                   sudo apt-get install -y ed
                   sudo apt-get install -y html2text
                   sudo apt-get install -y whois
+                  sudo apt-get install -y uuid-runtime
 
     # #
     #   Job > Blocklist > Master
