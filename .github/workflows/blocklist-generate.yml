@@ -35,7 +35,8 @@ on:
     workflow_dispatch:
 
     schedule:
-        - cron: '0 */6 * * *'
+        - cron: '0 0,6,12,18 * * *'
+        - cron: '0 2 * * *'
 
 # #
 #   environment variables
@@ -143,6 +144,9 @@ jobs:
             - name: "🧱 Generate › Master"
               id: task_blocklist_generate_master
               run: |
+                  run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} false ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }} ${{ secrets.API_01_FILE_04 }} ${{ secrets.API_01_FILE_05 }} ${{ secrets.API_01_FILE_06 }} ${{ secrets.API_01_FILE_07 }} ${{ secrets.API_01_FILE_08 }}"
+                  eval "./$run_master"
+
                   run_highrisk=".github/scripts/bl-htmltext.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
                   eval "./$run_highrisk"
 
@@ -154,52 +158,62 @@ jobs:
               id: task_blocklist_generate_privacy
               run: |
 
+                  #   Privacy › General
                   run_general=".github/scripts/bl-static.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
                   eval "./$run_general"
 
-                  run_google=".github/scripts/bl-json.sh ${{ vars.API_02_GOOGLE_OUT }} ${{secrets.API_02_GOOGLE_URL}} '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
+                  #   Privacy › Google
+                  run_google=".github/scripts/bl-json.sh ${{ vars.API_02_GOOGLE_OUT }} https://developers.google.com/search/apis/ipranges/googlebot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
                   eval "./$run_google"
 
-                  run_cloudfront=".github/scripts/bl-json.sh ${{ vars.API_02_CLOUDFRONT_OUT }} ${{ secrets.API_02_CLOUDFRONT_URL }} 'map(.[]) | sort | .[]'"
+                  #   Privacy › Cloudfront
+                  run_cloudfront=".github/scripts/bl-json.sh ${{ vars.API_02_CLOUDFRONT_OUT }} https://d7uri8nf7uskq.cloudfront.net/tools/list-cloudfront-ips 'map(.[]) | sort | .[]'"
                   eval "./$run_cloudfront"
 
-                  run_bing=".github/scripts/bl-json.sh ${{ vars.API_02_BING_OUT }} ${{ secrets.API_02_BING_URL }} '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
+                  #   Privacy › Bing
+                  run_bing=".github/scripts/bl-json.sh ${{ vars.API_02_BING_OUT }} https://bing.com/toolbox/bingbot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
                   eval "./$run_bing"
                 
-                  run_fastly=".github/scripts/bl-json.sh ${{ vars.API_02_FASTLY_OUT }} ${{ secrets.API_02_FASTLY_URL }} 'map(.[]) | .[]'"
+                  #   Privacy › Fastly
+                  run_fastly=".github/scripts/bl-json.sh ${{ vars.API_02_FASTLY_OUT }} https://api.fastly.com/public-ip-list 'map(.[]) | .[]'"
                   eval "./$run_fastly"
 
-                  run_amz_aws=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_AWS_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"AMAZON\") | .ip_prefix'"
+                  #   Privacy › Amazon AWS
+                  run_amz_aws=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_AWS_OUT }} https://ip-ranges.amazonaws.com/ip-ranges.json '.prefixes[] | select(.service==\"AMAZON\") | .ip_prefix'"
                   eval "./$run_amz_aws"
 
-                  run_amz_ec2=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_EC2_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
+                  #   Privacy › Amazon EC2
+                  run_amz_ec2=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_EC2_OUT }} https://ip-ranges.amazonaws.com/ip-ranges.json '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
                   eval "./$run_amz_ec2"
 
-                  #   Privacy > Ahrefs
+                  #   Privacy › Facebook
+                  whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{gsub("(route:|route6:)","");print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_facebook.ipset
+
+                  #   Privacy › Ahrefs
                   curl -sS -A "${{ env.USERAGENT }}" https://api.ahrefs.com/v3/public/crawler-ips | jq -r '.ips[].ip_address | select( . != null )' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_ahrefs.ipset
 
-                  #   Privacy > DuckDuckGo
+                  #   Privacy › DuckDuckGo
                   curl -sS -A "${{ env.USERAGENT }}" https://raw.githubusercontent.com/duckduckgo/duckduckgo-help-pages/master/_docs/results/duckduckbot.md | grep "^\- " | awk '{gsub("-",""); print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_duckduckgo.ipset
 
-                  #   Privacy > Telegram
+                  #   Privacy › Telegram
                   curl -sS -A "${{ env.USERAGENT }}" https://core.telegram.org/resources/cidr.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_telegram.ipset
 
-                  #   Privacy > Uptime Robot
+                  #   Privacy › Uptime Robot
                   curl -sS -A "${{ env.USERAGENT }}" https://uptimerobot.com/inc/files/ips/IPv4andIPv6.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_uptimerobot.ipset
 
-                  #   Privacy > Pingdom
+                  #   Privacy › Pingdom
                   PINGDOM_IPv4=$(curl -sS -A "${{ env.USERAGENT }}" https://my.pingdom.com/probes/ipv4)
                   PINGDOM_IPv6=$(curl -sS -A "${{ env.USERAGENT }}" https://my.pingdom.com/probes/ipv6)
                   PINGDOM_LIST="${PINGDOM_IPv4} ${PINGDOM_IPv6}"
                   echo "$PINGDOM_LIST" | .github/scripts/bl-template.sh 02_privacy_pingdom.ipset
 
-                  #   Privacy > Stripe
+                  #   Privacy › Stripe
                   curl -sS -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_webhooks.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_stripe.ipset
 
-                  #   Privacy > RSS API
+                  #   Privacy › RSS API
                   curl -sS -A "${{ env.USERAGENT }}" https://rssapi.net/ips.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_rssapi.ipset
 
-                  #   Privacy > WebPageTest
+                  #   Privacy › WebPageTest
                   curl -sS -A "${{ env.USERAGENT }}" https://www.webpagetest.org/addresses.php?f=json | jq -r '.data[].addresses[] | select( . != null )' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_webpagetest.ipset
 
                   #   Privacy > Bunny CDN
@@ -208,11 +222,14 @@ jobs:
                   BUNNYCDN_LIST="${BUNNYCDN_IPv4} ${BUNNYCDN_IPv6}"
                   echo "$BUNNYCDN_LIST" | .github/scripts/bl-template.sh 02_privacy_bunnycdn.ipset
 
-                  #   Privacy > Cloudflare CDN
+                  #   Privacy › Cloudflare CDN
                   CLOUDFLARE_IPv4=$(curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://www.cloudflare.com/ips-v4)
                   CLOUDFLARE_IPv6=$(curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://www.cloudflare.com/ips-v6)
                   CLOUDFLARE_LIST="${CLOUDFLARE_IPv4} ${CLOUDFLARE_IPv6}"
                   echo "$CLOUDFLARE_LIST" | .github/scripts/bl-template.sh 02_privacy_cloudflarecdn.ipset
+
+                  #   Privacy › AppleBot
+                  curl -sS -A "${{ env.USERAGENT }}" https://search.developer.apple.com/applebot.json | jq -r '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_applebot.ipset
 
             # #
             #   Generate > Spam
@@ -223,6 +240,20 @@ jobs:
               run: |
                   run_spamhaus=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_SPAMHAUS_OUT }} false ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
                   eval "./$run_spamhaus"
+
+            # #
+            #   Generate > Spam > Forums
+            #
+            #   only updated once per day (at 1am UTC)
+            # #
+
+            - name: "🧱 Generate › Spam › Forums (1/day)"
+              id: task_blocklist_spam_generate_forums
+              if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
+              run: |
+                  chmod +x ".github/scripts/bl-download.sh"
+                  run_forums=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_FORUMS_OUT }} false ${{ secrets.API_03_SPAM_FORUMS_URL }}"
+                  eval "./$run_forums"
 
             # #
             #   Generate  > Artifact > Upload
