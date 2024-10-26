@@ -144,9 +144,6 @@ jobs:
             - name: "🧱 Generate › Master"
               id: task_blocklist_generate_master
               run: |
-                  run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} false ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }} ${{ secrets.API_01_FILE_04 }} ${{ secrets.API_01_FILE_05 }} ${{ secrets.API_01_FILE_06 }} ${{ secrets.API_01_FILE_07 }} ${{ secrets.API_01_FILE_08 }}"
-                  eval "./$run_master"
-
                   run_highrisk=".github/scripts/bl-htmltext.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
                   eval "./$run_highrisk"
 
@@ -207,8 +204,14 @@ jobs:
                   PINGDOM_LIST="${PINGDOM_IPv4} ${PINGDOM_IPv6}"
                   echo "$PINGDOM_LIST" | .github/scripts/bl-template.sh 02_privacy_pingdom.ipset
 
-                  #   Privacy › Stripe
-                  curl -sS -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_webhooks.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_stripe.ipset
+                  #   Privacy › Stripe › API
+                  curl -sS -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_api.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_stripe_api.ipset
+
+                  #   Privacy › Stripe › Webhooks
+                  curl -sS -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_webhooks.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_stripe_webhooks.ipset
+
+                  #   Privacy › Stripe › Armada Gator
+                  curl -sS -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_armada_gator.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_stripe_armada_gator.ipset
 
                   #   Privacy › RSS API
                   curl -sS -A "${{ env.USERAGENT }}" https://rssapi.net/ips.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_rssapi.ipset
