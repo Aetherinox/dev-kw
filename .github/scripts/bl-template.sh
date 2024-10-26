@@ -69,6 +69,18 @@ DESCRIPTION=$([ "${DESCRIPTION}" == *"404: Not Found"* ] && echo "#   No descrip
 CATEGORY=$([ "${CATEGORY}" == *"404: Not Found"* ] && echo "Uncategorized" || echo "${CATEGORY}")
 EXPIRES=$([ "${EXPIRES}" == *"404: Not Found"* ] && echo "6 hours" || echo "${EXPIRES}")
 
+if [[ "$DESCRIPTION" == *"404: Not Found"* ]]; then
+    DESCRIPTION="No description provided"
+fi
+
+if [[ "$CATEGORY" == *"404: Not Found"* ]]; then
+    CATEGORY="Uncategorized"
+fi
+
+if [[ "$EXPIRES" == *"404: Not Found"* ]]; then
+    EXPIRES="6 hours"
+fi
+
 # #
 #   Validate ipv4 / CIDR
 # #
