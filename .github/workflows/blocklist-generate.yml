@@ -145,7 +145,10 @@ jobs:
               run: |
 
                   #   Privacy > Ahrefs
-                  curl -sS https://api.ahrefs.com/v3/public/crawler-ips | jq -r '.ips[].ip_address | select( . != null )' | .github/scripts/bl-template.sh 02_privacy_ahrefs.ipset
+                  curl -sS https://api.ahrefs.com/v3/public/crawler-ips | jq -r '.ips[].ip_address | select( . != null )' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_ahrefs.ipset
+
+                  #   Privacy > DuckDuckGo
+                  curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://raw.githubusercontent.com/duckduckgo/duckduckgo-help-pages/master/_docs/results/duckduckbot.md | grep "^\- " | awk '{gsub("-",""); print}' | awk '{gsub(/ /,""); print}' | .github/scripts/bl-template.sh 02_privacy_duckduckgo.ipset
 
             # #
             #   Generate > Spam
