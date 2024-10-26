@@ -144,43 +144,9 @@ jobs:
               id: task_blocklist_generate_privacy
               run: |
 
-                  #   Privacy > Bing
-                  run_bing=".github/scripts/bl-json.sh ${{ vars.API_02_BING_OUT }} ${{ secrets.API_02_BING_URL }} '.prefixes[].ipv6Prefix,.prefixes[].ipv4Prefix | select( . != null )'"
-                  eval "./$run_bing"
-                
-                  #   Privacy > Fastly
-                  run_fastly=".github/scripts/bl-json.sh ${{ vars.API_02_FASTLY_OUT }} ${{ secrets.API_02_FASTLY_URL }} 'map(.[]) | .[]'"
-                  eval "./$run_fastly"
-
-                  #   Privacy > Amazon > AWS
-                  run_amz_aws=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_AWS_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"AMAZON\") | .ip_prefix'"
-                  eval "./$run_amz_aws"
-
-                  #   Privacy > Amazon > EC2
-                  run_amz_ec2=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_EC2_OUT }} ${{ secrets.API_02_AMAZON_URL }} '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
-                  eval "./$run_amz_ec2"
-                  
                   #   Privacy > Ahrefs
-                  run_ahref="curl -sS https://api.ahrefs.com/v3/public/crawler-ips | jq -r '.ips[].ip_address | select( . != null )' | .github/scripts/bl-template.sh 02_privacy_ahrefs.ipset"
+                  run_ahref="curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://api.ahrefs.com/v3/public/crawler-ips | jq -r '.ips[].ip_address | select( . != null )' | .github/scripts/bl-template.sh 02_privacy_ahrefs.ipset"
                   eval "./$run_ahref"
-
-                  #   Privacy > Facebook
-                  whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{gsub("(route:|route6:)","");print}' | awk '{gsub(/ /,""); print}' | .github/scripts/bl-template.sh 02_privacy_facebook.ipset
-
-                  #   Privacy > DuckDuckGo
-                  curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://raw.githubusercontent.com/duckduckgo/duckduckgo-help-pages/master/_docs/results/duckduckbot.md | grep "^\- " | awk '{gsub("-",""); print}' | awk '{gsub(/ /,""); print}' | .github/scripts/bl-template.sh 02_privacy_duckduckgo.ipset
-
-                  #   Privacy > Telegram
-                  curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://core.telegram.org/resources/cidr.txt | .github/scripts/bl-template.sh 02_privacy_telegram.ipset
-
-                  #   Privacy > Uptime Robot
-                  curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://uptimerobot.com/inc/files/ips/IPv4andIPv6.txt | .github/scripts/bl-template.sh 02_privacy_uptimerobot.ipset
-
-                  #   Privacy > Pingdom
-                  PINGDOM_IPv4=$(curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://my.pingdom.com/probes/ipv4)
-                  PINGDOM_IPv6=$(curl -sS -A "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" https://my.pingdom.com/probes/ipv6)
-                  PINGDOM_LIST="${PINGDOM_IPv4} ${PINGDOM_IPv6}"
-                  echo "$PINGDOM_LIST" | .github/scripts/bl-template.sh 02_privacy_pingdom.ipset
 
             # #
             #   Generate > Spam
