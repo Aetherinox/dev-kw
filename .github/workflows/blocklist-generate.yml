@@ -161,7 +161,7 @@ jobs:
                   eval "./$run_amz_ec2"
                   
                   #   Privacy > Ahrefs
-                  run_ahref="curl -sS https://api.ahrefs.com/v3/public/crawler-ips | jq -r '.ips[].ip_address' | .github/scripts/bl-template.sh 02_privacy_ahrefs.ipset
+                  run_ahref="curl -sS https://api.ahrefs.com/v3/public/crawler-ips | jq -r '.ips[].ip_address | select( . != null )' | .github/scripts/bl-template.sh 02_privacy_ahrefs.ipset"
                   eval "./$run_ahref"
 
                   #   Privacy > Facebook
