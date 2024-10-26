@@ -54,6 +54,7 @@ COUNT_TOTAL_IP=0                            # number of single IPs (counts each 
 BLOCKS_COUNT_TOTAL_IP=0                     # number of ips for one particular file
 BLOCKS_COUNT_TOTAL_SUBNET=0                 # number of subnets for one particular file
 ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"        # ipset id, /description/* and /category/* files must match this value
+UUID=$(cat /proc/sys/kernel/random/uuid)    # uuid associated to each release
 DESCRIPTION=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/descriptions/${ID}.txt")
 CATEGORY=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/categories/${ID}.txt")
 EXPIRES=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/expires/${ID}.txt")
@@ -273,6 +274,7 @@ ed -s ${ARG_SAVEFILE} <<END_ED
 #
 #   @url            https://github.com/Aetherinox/csf-firewall
 #   @id             ${ID}
+#   @uuid           ${UUID}
 #   @updated        ${NOW}
 #   @entries        $COUNT_TOTAL_IP ips
 #                   $COUNT_TOTAL_SUBNET subnets
