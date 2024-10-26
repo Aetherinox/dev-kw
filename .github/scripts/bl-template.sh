@@ -29,14 +29,13 @@
 # #
 
 ARG_SAVEFILE=$1
-ARG_APPEND=$2
 
 # #
 #   Validation checks
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for Google Crawler list"
+    echo -e "  ⭕ No output file specified for bl-template"
     echo -e
     exit 1
 fi
@@ -252,7 +251,8 @@ echo -e
 #       0a  top of file
 # #
 
-if [[ $ARG_APPEND == "true" ]]; then
+echo -e "  ➕ Injecting header into ${ARG_SAVEFILE}"
+echo -e
 
 ed -s ${ARG_SAVEFILE} <<END_ED
 0a
@@ -276,7 +276,7 @@ w
 q
 END_ED
 
-fi
+echo "${ARG_SAVEFILE}"
 
 # #
 #   Move ipset to final location
@@ -284,12 +284,7 @@ fi
 
 echo -e "  🚛 Move ${ARG_SAVEFILE} to ${FOLDER_SAVE}/${ARG_SAVEFILE}"
 mkdir -p ${FOLDER_SAVE}/
-
-if [[ $ARG_APPEND == "true" ]]; then
-    ${ARG_SAVEFILE} >> ${FOLDER_SAVE}/${ARG_SAVEFILE}
-else
-    mv ${ARG_SAVEFILE} ${FOLDER_SAVE}/
-fi
+mv ${ARG_SAVEFILE} ${FOLDER_SAVE}/
 
 # #
 #   Finished
