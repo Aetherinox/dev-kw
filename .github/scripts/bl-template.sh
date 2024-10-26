@@ -273,7 +273,6 @@ ed -s ${ARG_SAVEFILE} <<END_ED
 #
 #   @url            https://raw.githubusercontent.com/${REPO}/main/${FOLDER_SAVE}/${ARG_SAVEFILE}
 #   @source         ${URL_SOURCE}
-#   @updated        ${NOW}
 #   @id             ${ID}
 #   @uuid           ${UUID}
 #   @updated        ${NOW}
