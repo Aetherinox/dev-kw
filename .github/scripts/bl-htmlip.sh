@@ -47,6 +47,7 @@
 #       ARG_URL             (str)       url to grab text from
 # #
 
+APP_FILE=$(basename "$0")
 ARG_SAVEFILE=$1
 ARG_URL=$2
 
@@ -55,7 +56,7 @@ ARG_URL=$2
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for bl-htmlip"
+    echo -e "  ⭕ No output file specified for saving by script ${APP_FILE}"
     echo -e
     exit 1
 fi

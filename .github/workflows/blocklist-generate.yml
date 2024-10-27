@@ -2,8 +2,7 @@
 #   @usage              https://github.com/Aetherinox/csf-firewall
 #   @type               github workflow
 #
-#   download AbuseIPDB ip list after list of ips are downloaded, merges them with a static list
-#   that is not updated as often which contains a list of long-term abusive ip addresses
+#   generates a list of ipsets which can then be used within host files, config server firewall, and various other apps
 #
 #   📄 bl-master.sh               generate master ipset | URLs: VARARG
 #   📄 bl-plain.sh                generate ipset from online plain-text url / page | URLs: VARARG
@@ -162,9 +161,6 @@ jobs:
             - name: "🧱 Generate › Master"
               id: task_blocklist_generate_master
               run: |
-                  run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }} ${{ secrets.API_01_FILE_04 }} ${{ secrets.API_01_FILE_05 }} ${{ secrets.API_01_FILE_06 }} ${{ secrets.API_01_FILE_07 }} ${{ secrets.API_01_FILE_08 }}"
-                  eval "./$run_master"
-
                   run_highrisk=".github/scripts/bl-htmlip.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
                   eval "./$run_highrisk"
 
@@ -181,27 +177,27 @@ jobs:
                   eval "./$run_general"
 
                   #   Privacy › Google
-                  run_google=".github/scripts/bl-json.sh ${{ vars.API_02_GOOGLE_OUT }} https://developers.google.com/search/apis/ipranges/googlebot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
+                  run_google=".github/scripts/bl-json.sh 02_privacy_google.ipset https://developers.google.com/search/apis/ipranges/googlebot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
                   eval "./$run_google"
 
                   #   Privacy › Cloudfront
-                  run_cloudfront=".github/scripts/bl-json.sh ${{ vars.API_02_CLOUDFRONT_OUT }} https://d7uri8nf7uskq.cloudfront.net/tools/list-cloudfront-ips 'map(.[]) | sort | .[]'"
+                  run_cloudfront=".github/scripts/bl-json.sh 02_privacy_cloudfront.ipset https://d7uri8nf7uskq.cloudfront.net/tools/list-cloudfront-ips 'map(.[]) | sort | .[]'"
                   eval "./$run_cloudfront"
 
                   #   Privacy › Bing
-                  run_bing=".github/scripts/bl-json.sh ${{ vars.API_02_BING_OUT }} https://bing.com/toolbox/bingbot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
+                  run_bing=".github/scripts/bl-json.sh 02_privacy_bing.ipset https://bing.com/toolbox/bingbot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
                   eval "./$run_bing"
                 
                   #   Privacy › Fastly
-                  run_fastly=".github/scripts/bl-json.sh ${{ vars.API_02_FASTLY_OUT }} https://api.fastly.com/public-ip-list 'map(.[]) | .[]'"
+                  run_fastly=".github/scripts/bl-json.sh 02_privacy_fastly.ipset https://api.fastly.com/public-ip-list 'map(.[]) | .[]'"
                   eval "./$run_fastly"
 
                   #   Privacy › Amazon AWS
-                  run_amz_aws=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_AWS_OUT }} https://ip-ranges.amazonaws.com/ip-ranges.json '.prefixes[] | select(.service==\"AMAZON\") | .ip_prefix'"
+                  run_amz_aws=".github/scripts/bl-json.sh 02_privacy_amazon_aws.ipset https://ip-ranges.amazonaws.com/ip-ranges.json '.prefixes[] | select(.service==\"AMAZON\") | .ip_prefix'"
                   eval "./$run_amz_aws"
 
                   #   Privacy › Amazon EC2
-                  run_amz_ec2=".github/scripts/bl-json.sh ${{ vars.API_02_AMAZON_EC2_OUT }} https://ip-ranges.amazonaws.com/ip-ranges.json '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
+                  run_amz_ec2=".github/scripts/bl-json.sh block/02_privacy_amazon_ec2.ipset https://ip-ranges.amazonaws.com/ip-ranges.json '.prefixes[] | select(.service==\"EC2\") | .ip_prefix'"
                   eval "./$run_amz_ec2"
 
                   #   Privacy › Facebook

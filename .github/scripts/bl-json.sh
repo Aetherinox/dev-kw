@@ -41,6 +41,7 @@
 #       ARG_JSON_QRY        (str)       jq rules which pull the needed ip addresses
 # #
 
+APP_FILE=$(basename "$0")
 ARG_SAVEFILE=$1
 ARG_JSON_URL=$2
 ARG_JSON_QRY=$3
@@ -50,7 +51,7 @@ ARG_JSON_QRY=$3
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for bl-json"
+    echo -e "  ⭕ No output file specified for saving by script ${APP_FILE}"
     echo -e
     exit 1
 fi
@@ -241,7 +242,7 @@ ed -s ${APP_FILE_PERM} <<END_ED
 # #
 #   🧱 Firewall Blocklist - ${APP_FILE_PERM}
 #
-#   @url            https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/${APP_DIR_LISTS}/${APP_FILE_PERM}
+#   @url            https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/${APP_FILE_PERM}
 #   @source         ${TEMP_URL_SRC}
 #   @id             ${TEMPL_ID}
 #   @uuid           ${TEMPL_UUID}
@@ -264,9 +265,9 @@ END_ED
 #   Move ipset to final location
 # #
 
-echo -e "  🚛 Move ${APP_FILE_PERM} to ${APP_DIR_LISTS}/${APP_FILE_PERM}"
-mkdir -p ${APP_DIR_LISTS}/
-mv ${APP_FILE_PERM} ${APP_DIR_LISTS}/
+echo -e "  🚛 Create $(dirname "${APP_FILE_PERM}") and move ${APP_FILE_PERM} to ${APP_FILE_PERM}"
+mkdir -p $(dirname "${APP_FILE_PERM}")
+mv ${APP_FILE_PERM} ${APP_FILE_PERM}
 
 # #
 #   Finished

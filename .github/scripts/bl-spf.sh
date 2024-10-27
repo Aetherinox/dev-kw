@@ -32,6 +32,7 @@
 #       ARG_SAVEFILE        (str)       file to save IP addresses into
 # #
 
+APP_FILE=$(basename "$0")
 ARG_SAVEFILE=$1
 
 # #
@@ -39,7 +40,7 @@ ARG_SAVEFILE=$1
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for bl-spf"
+    echo -e "  ⭕ No output file specified for saving by script ${APP_FILE}"
     echo -e
     exit 1
 fi

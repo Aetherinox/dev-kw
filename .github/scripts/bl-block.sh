@@ -39,6 +39,7 @@
 #       ARG_BLOCKS_CAT      (str)       which blocks folder to inject static IP addresses from
 # #
 
+APP_FILE=$(basename "$0")
 ARG_SAVEFILE=$1
 ARG_BLOCKS_CAT=$2
 
@@ -47,7 +48,7 @@ ARG_BLOCKS_CAT=$2
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for bl-block"
+    echo -e "  ⭕ No output file specified for saving by script ${APP_FILE}"
     echo -e
     exit 1
 fi

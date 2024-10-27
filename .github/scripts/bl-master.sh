@@ -45,6 +45,7 @@
 #       { ... }             (varg)      list of URLs to API end-points
 # #
 
+APP_FILE=$(basename "$0")
 ARG_SAVEFILE=$1
 
 # #
@@ -52,7 +53,7 @@ ARG_SAVEFILE=$1
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for downloader script"
+    echo -e "  ⭕ No output file specified for saving by script ${APP_FILE}"
     echo -e
     exit 1
 fi
@@ -184,7 +185,7 @@ download_list()
             if [[ $ips =~ $REGEX_ISNUM ]]; then
                 CIDR=$(echo $line | sed 's:.*/::')
 
-            # uncomment if you want to count ONLY usable IP addresses
+                # uncomment if you want to count ONLY usable IP addresses
                 # subtract - 2 from any cidr not ending with 31 or 32
                 # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
                     # COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP - 2`
@@ -254,6 +255,7 @@ if [ -d .github/blocks/ ]; then
         BLOCKS_COUNT_TOTAL_SUBNET=0
 
         for line in $(cat ${APP_FILE_TEMP}); do
+            # is ipv6
             if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
                 COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`                       # GLOBAL count subnet
                 BLOCKS_COUNT_TOTAL_SUBNET=`expr $BLOCKS_COUNT_TOTAL_SUBNET + 1`         # LOCAL count subnet
