@@ -79,7 +79,6 @@ APP_REPO_BRANCH="main"                                  # repository branch
 APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
 APP_FILE_TEMP="${ARG_SAVEFILE}.tmp"                     # temp file when building ipset list
 APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
-APP_DIR_LISTS="blocklists"                              # folder where to save .ipset file
 COUNT_LINES=0                                           # number of lines in doc
 COUNT_TOTAL_SUBNET=0                                    # number of IPs in all subnets combined
 COUNT_TOTAL_IP=0                                        # number of single IPs (counts each line)

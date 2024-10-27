@@ -73,7 +73,6 @@ APP_REPO="Aetherinox/dev-kw"                            # repository
 APP_REPO_BRANCH="main"                                  # repository branch
 APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
 APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
-APP_DIR_LISTS="blocklists"                              # folder where to save .ipset file
 COUNT_LINES=0                                           # number of lines in doc
 COUNT_TOTAL_SUBNET=0                                    # number of IPs in all subnets combined
 COUNT_TOTAL_IP=0                                        # number of single IPs (counts each line)
@@ -134,13 +133,14 @@ echo -e "  ⭐ Starting"
 # #
 
 if [ -f $APP_FILE_PERM ]; then
-    echo -e "  📄 Cleaning ${APP_FILE_PERM}"
+    echo -e "  📄 Clean ${APP_FILE_PERM}"
     echo -e
    > ${APP_FILE_PERM}       # clean file
 else
-    echo -e "  📄 Creating ${APP_FILE_PERM}"
+    echo -e "  📁 Create ${APP_FILE_PERM}"
     echo -e
-   touch ${APP_FILE_PERM}
+    mkdir -p $(dirname "${APP_FILE_PERM}")
+    touch ${APP_FILE_PERM}
 fi
 
 # #
@@ -339,7 +339,7 @@ ed -s ${APP_FILE_PERM} <<END_ED
 # #
 #   🧱 Firewall Blocklist - ${APP_FILE_PERM}
 #
-#   @url            https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/${APP_DIR_LISTS}/${APP_FILE_PERM}
+#   @url            https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/${APP_FILE_PERM}
 #   @source         ${TEMP_URL_SRC}
 #   @id             ${TEMPL_ID}
 #   @uuid           ${TEMPL_UUID}
@@ -359,26 +359,12 @@ q
 END_ED
 
 # #
-#   Move ipset to final location
-# #
-
-echo -e "  🚛 Move ${APP_FILE_PERM} to ${APP_DIR_LISTS}/${APP_FILE_PERM}"
-mkdir -p ${APP_DIR_LISTS}/
-mv ${APP_FILE_PERM} ${APP_DIR_LISTS}/
-
-# #
 #   Finished
 # #
 
 T=$SECONDS
-echo -e "  🎌 Finished"
-
-# #
-#   Run time
-# #
-
 echo -e
-printf "  🕙 Elapsed time: %02d days %02d hrs %02d mins %02d secs\n" "$((T/86400))" "$((T/3600%24))" "$((T/60%60))" "$((T%60))"
+printf "  🎌 Finished! %02d days %02d hrs %02d mins %02d secs\n" "$((T/86400))" "$((T/3600%24))" "$((T/60%60))" "$((T%60))"
 
 # #
 #   Output
