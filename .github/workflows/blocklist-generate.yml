@@ -284,7 +284,7 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: blocklist-latest
-                  path: ./blocklists
+                  path: ./
                   retention-days: 1
 
     # #
@@ -317,7 +317,7 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                   name: blocklist-latest
-                  path: ./blocklists
+                  path: ./
 
             # #
             #   Commit > Precommit
