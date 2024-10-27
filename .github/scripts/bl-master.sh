@@ -2,35 +2,37 @@
 
 # #
 #   @for                https://github.com/Aetherinox/csf-firewall
-#   @assoc              blocklist-generate.yml
+#   @workflow           blocklist-generate.yml
 #   @type               bash script
-#   @summary            Uses a URL to download various files from online websites.
+#   @summary            Should only be used with the primary 01_master ipset file.
+#                       Uses a URL to download various files from online websites.
 #                       At the end, it also fetches any file inside `github/blocks/bruteforce/*` and adds those IPs to the end of the file.
 #                       Supports multiple URLs as arguments.
 #   
+#   @terminal           .github/scripts/bl-master.sh 01_master.ipset \
+#                           https://blocklist.url1.txt \
+#                           https://blocklist.url2.txt \
+#                           https://blocklist.url3.txt \
+#                           https://blocklist.url4.txt
+#
+#   @workflow           chmod +x ".github/scripts/bl-master.sh"
+#                       run_master=".github/scripts/bl-master.sh 01_master.ipset ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }}"
+#                       eval "./$run_master"
+#
+#   @command            bl-master.sh
+#                           <ARG_SAVEFILE>
+#                           <URL_1>
+#                           <URL_2>
+#                           {...}
+#                       bl-master.sh 01_master.ipset URL_1 
+#                       bl-master.sh 01_master.ipset URL_1 URL_2 URL_3
+#
 #                       📁 .github
-#                           📁 blocks
-#                               📁 bruteforce
-#                                   📄 *.txt
 #                           📁 scripts
 #                               📄 bl-master.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
-#   activated from github workflow:
-#       - .github/workflows/blocklist-generate.yml
-#
-#   within github workflow, run:
-#       chmod +x ".github/scripts/bl-master.sh"
-#       run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} false ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }}"
-#       eval "./$run_master"
-#
-#   downloads a list of .txt / .ipset IP addresses in single file.
-#   generates a header to place at the top.
-#   
-#   @uage               bl-master.sh <ARG_SAVEFILE> <ARG_BOOL_DND:false|true> [ <URL_BL_1>, <URL_BL_1> {...} ]
-#                       bl-master.sh 01_master.ipset false API_URL_1 
-#                       bl-master.sh 01_master.ipset true API_URL_1 API_URL_2 API_URL_3
 # #
 
 # #
@@ -39,12 +41,10 @@
 #   This bash script has the following arguments:
 #
 #       ARG_SAVEFILE        (str)       file to save IP addresses into
-#       ARG_BOOL_DND        (bool)      add `#do not delete` to end of each line
 #       { ... }             (varg)      list of URLs to API end-points
 # #
 
 ARG_SAVEFILE=$1
-ARG_BOOL_DND=$2
 
 # #
 #   Validation checks
@@ -56,12 +56,7 @@ if [[ -z "${ARG_SAVEFILE}" ]]; then
     exit 1
 fi
 
-if [[ -z "${ARG_BOOL_DND}" ]]; then
-    echo -e "  ⭕  Aborting -- DND not specified"
-    exit 1
-fi
-
-if test "$#" -lt 3; then
+if test "$#" -lt 2; then
     echo -e "  ⭕  Aborting -- did not provide URL arguments"
     exit 1
 fi
@@ -74,6 +69,7 @@ SECONDS=0                                               # set seconds count for 
 APP_DIR=${PWD}                                          # returns the folder this script is being executed in
 APP_REPO="Aetherinox/dev-kw"                            # repository
 APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
+APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
 APP_DIR_LISTS="blocklists"                              # folder where to save .ipset file
 COUNT_LINES=0                                           # number of lines in doc
 COUNT_TOTAL_SUBNET=0                                    # number of IPs in all subnets combined
@@ -81,7 +77,7 @@ COUNT_TOTAL_IP=0                                        # number of single IPs (
 BLOCKS_COUNT_TOTAL_IP=0                                 # number of ips for one particular file
 BLOCKS_COUNT_TOTAL_SUBNET=0                             # number of subnets for one particular file
 TEMPL_NOW=`date -u`                                     # get current date in utc format
-TEMPL_ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"              # ipset id, /description/* and /category/* files must match this value
+TEMPL_ID="${APP_FILE_PERM//[^[:alnum:]]/_}"             # ipset id, /description/* and /category/* files must match this value
 TEMPL_UUID=$(uuidgen -m -N "${TEMPL_ID}" -n @url)       # uuid associated to each release
 APP_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
 TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/descriptions/${TEMPL_ID}.txt")
@@ -89,6 +85,7 @@ TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP
 TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/expires/${TEMPL_ID}.txt")
 TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/url-source/${TEMPL_ID}.txt")
 REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
+REGEX_ISNUM='^[0-9]+$'
 
 # #
 #   Default Values
@@ -116,9 +113,10 @@ fi
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-echo -e "  Blocklist - ${ARG_SAVEFILE}"
-echo -e "  ID:         ${TEMPL_ID}"
-echo -e "  CATEGORY:   ${TEMPL_CAT}"
+echo -e "  Blocklist -  ${APP_FILE_PERM}"
+echo -e "  ID:          ${TEMPL_ID}"
+echo -e "  UUID:        ${TEMPL_UUID}"
+echo -e "  CATEGORY:    ${TEMPL_CAT}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 
 # #
@@ -132,14 +130,14 @@ echo -e "  ⭐ Starting"
 #   Create or Clean file
 # #
 
-if [ -f $ARG_SAVEFILE ]; then
-    echo -e "  📄 Cleaning ${ARG_SAVEFILE}"
+if [ -f $APP_FILE_PERM ]; then
+    echo -e "  📄 Cleaning ${APP_FILE_PERM}"
     echo -e
-   > ${ARG_SAVEFILE}       # clean file
+   > ${APP_FILE_PERM}       # clean file
 else
-    echo -e "  📄 Creating ${ARG_SAVEFILE}"
+    echo -e "  📄 Creating ${APP_FILE_PERM}"
     echo -e
-   touch ${ARG_SAVEFILE}
+   touch ${APP_FILE_PERM}
 fi
 
 # #
@@ -157,16 +155,11 @@ download_list()
 
     echo -e "  🌎 Downloading IP blacklist to ${tempFile}"
 
-    curl -sSL -A "${CURL_AGENT}" ${fnUrl} -o ${tempFile} >/dev/null 2>&1     # download file
-    sed -i 's/\-.*//' ${tempFile}                                           # remove hyphens for ip ranges
-    sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                      # remove # and ; comments
-    sed -i 's/[[:blank:]]*$//' ${tempFile}                                  # remove space / tab from EOL
-    sed -i '/^\s*$/d' ${tempFile}                                           # remove empty lines
-
-    if [ "$ARG_BOOL_DND" = true ] ; then
-        echo -e "  ⭕ Enabled \`# do not delete\`"
-        sed -i 's/$/\t\t\t\#\ do\ not\ delete/' ${tempFile}                 # add csf `# do not delete` to end of each line
-    fi
+    curl -sSL -A "${CURL_AGENT}" ${fnUrl} -o ${tempFile} >/dev/null 2>&1        # download file
+    sed -i 's/\-.*//' ${tempFile}                                               # remove hyphens for ip ranges
+    sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                          # remove # and ; comments
+    sed -i 's/[[:blank:]]*$//' ${tempFile}                                      # remove space / tab from EOL
+    sed -i '/^\s*$/d' ${tempFile}                                               # remove empty lines
 
     # #
     #   calculate how many IPs are in a subnet
@@ -179,28 +172,28 @@ download_list()
     for line in $(cat ${tempFile}); do
         # is ipv6
         if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
-            COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`                   # GLOBAL count subnet
-            DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + 1`             # LOCAL count subnet
+            COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`                           # GLOBAL count subnet
+            DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + 1`                     # LOCAL count subnet
 
         # is subnet
         elif [[ $line =~ /[0-9]{1,2}$ ]]; then
             ips=$(( 1 << (32 - ${line#*/}) ))
 
-            regexIsNum='^[0-9]+$'
-            if [[ $ips =~ $regexIsNum ]]; then
+            if [[ $ips =~ $REGEX_ISNUM ]]; then
                 CIDR=$(echo $line | sed 's:.*/::')
 
+            # uncomment if you want to count ONLY usable IP addresses
                 # subtract - 2 from any cidr not ending with 31 or 32
                 # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
                     # COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP - 2`
                     # DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP - 2`
                 # fi
 
-                COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`            # GLOBAL count IPs in subnet
-                COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`       # GLOBAL count subnet
+                COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`                    # GLOBAL count IPs in subnet
+                COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`               # GLOBAL count subnet
 
-                DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + $ips`      # LOCAL count IPs in subnet
-                DL_COUNT_TOTAL_SUBNET=`expr $DL_COUNT_TOTAL_SUBNET + 1` # LOCAL count subnet
+                DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + $ips`              # LOCAL count IPs in subnet
+                DL_COUNT_TOTAL_SUBNET=`expr $DL_COUNT_TOTAL_SUBNET + 1`         # LOCAL count subnet
             fi
 
         # is normal IP
@@ -214,16 +207,16 @@ download_list()
     #   Count lines and subnets
     # #
 
-    DL_COUNT_TOTAL_IP=$(printf "%'d" "$DL_COUNT_TOTAL_IP")                  # LOCAL add commas to thousands
-    DL_COUNT_TOTAL_SUBNET=$(printf "%'d" "$DL_COUNT_TOTAL_SUBNET")          # LOCAL add commas to thousands
+    DL_COUNT_TOTAL_IP=$(printf "%'d" "$DL_COUNT_TOTAL_IP")                      # LOCAL add commas to thousands
+    DL_COUNT_TOTAL_SUBNET=$(printf "%'d" "$DL_COUNT_TOTAL_SUBNET")              # LOCAL add commas to thousands
 
     # #
     #   Move temp file to final
     # #
 
     echo -e "  🚛 Move ${tempFile} to ${fnFile}"
-    cat ${tempFile} >> ${fnFile}                                            # copy .tmp contents to real file
-    rm ${tempFile}                                                          # delete temp file
+    cat ${tempFile} >> ${fnFile}                                                # copy .tmp contents to real file
+    rm ${tempFile}                                                              # delete temp file
 
     echo -e "  ➕ Added ${DL_COUNT_TOTAL_IP} IPs and ${DL_COUNT_TOTAL_SUBNET} subnets to ${fnFile}"
 }
@@ -232,9 +225,9 @@ download_list()
 #   Download lists
 # #
 
-for arg in "${@:3}"; do
+for arg in "${@:2}"; do
     if [[ $arg =~ $REGEX_URL ]]; then
-        download_list ${arg} ${ARG_SAVEFILE}
+        download_list ${arg} ${APP_FILE_PERM}
         echo -e
     fi
 done
@@ -267,10 +260,10 @@ if [ -d .github/blocks/ ]; then
             elif [[ $line =~ /[0-9]{1,2}$ ]]; then
                 ips=$(( 1 << (32 - ${line#*/}) ))
 
-                regexIsNum='^[0-9]+$'
-                if [[ $ips =~ $regexIsNum ]]; then
+                if [[ $ips =~ $REGEX_ISNUM ]]; then
                     CIDR=$(echo $line | sed 's:.*/::')
 
+                    # uncomment if you want to count ONLY usable IP addresses
                     # subtract - 2 from any cidr not ending with 31 or 32
                     # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
                         # BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP - 2`
@@ -298,8 +291,8 @@ if [ -d .github/blocks/ ]; then
         BLOCKS_COUNT_TOTAL_IP=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_IP")                  # LOCAL add commas to thousands
         BLOCKS_COUNT_TOTAL_SUBNET=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_SUBNET")          # LOCAL add commas to thousands
 
-        echo -e "  🚛 Move ${APP_FILE_TEMP} to ${ARG_SAVEFILE}"
-        cat ${APP_FILE_TEMP} >> ${ARG_SAVEFILE}                                         # copy .tmp contents to real file
+        echo -e "  🚛 Move ${APP_FILE_TEMP} to ${APP_FILE_PERM}"
+        cat ${APP_FILE_TEMP} >> ${APP_FILE_PERM}                                        # copy .tmp contents to real file
 
         echo -e "  ➕ Added ${BLOCKS_COUNT_TOTAL_IP} IPs and ${BLOCKS_COUNT_TOTAL_SUBNET} Subnets to ${APP_FILE_TEMP}"
         echo -e
@@ -313,16 +306,16 @@ fi
 #       - remove .sort temp file
 # #
 
-sorting=$(cat ${ARG_SAVEFILE} | grep -v "^#" | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${ARG_SAVEFILE}.sort)
-> ${ARG_SAVEFILE}
-cat ${ARG_SAVEFILE}.sort >> ${ARG_SAVEFILE}
-rm ${ARG_SAVEFILE}.sort
+sorting=$(cat ${APP_FILE_PERM} | grep -v "^#" | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${APP_FILE_PERM}.sort)
+> ${APP_FILE_PERM}
+cat ${APP_FILE_PERM}.sort >> ${APP_FILE_PERM}
+rm ${APP_FILE_PERM}.sort
 
 # #
 #   Format Counts
 # #
 
-COUNT_LINES=$(wc -l < ${ARG_SAVEFILE})                                  # count ip lines
+COUNT_LINES=$(wc -l < ${APP_FILE_PERM})                                 # count ip lines
 COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                              # GLOBAL add commas to thousands
 
 # #
@@ -337,12 +330,12 @@ COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                # GLOBAL
 #       0a  top of file
 # #
 
-ed -s ${ARG_SAVEFILE} <<END_ED
+ed -s ${APP_FILE_PERM} <<END_ED
 0a
 # #
-#   🧱 Firewall Blocklist - ${ARG_SAVEFILE}
+#   🧱 Firewall Blocklist - ${APP_FILE_PERM}
 #
-#   @url            https://raw.githubusercontent.com/${APP_REPO}/main/${APP_DIR_LISTS}/${ARG_SAVEFILE}
+#   @url            https://raw.githubusercontent.com/${APP_REPO}/main/${APP_DIR_LISTS}/${APP_FILE_PERM}
 #   @source         ${TEMP_URL_SRC}
 #   @id             ${TEMPL_ID}
 #   @uuid           ${TEMPL_UUID}
@@ -365,9 +358,9 @@ END_ED
 #   Move ipset to final location
 # #
 
-echo -e "  🚛 Move ${ARG_SAVEFILE} to ${APP_DIR_LISTS}/${ARG_SAVEFILE}"
+echo -e "  🚛 Move ${APP_FILE_PERM} to ${APP_DIR_LISTS}/${APP_FILE_PERM}"
 mkdir -p ${APP_DIR_LISTS}/
-mv ${ARG_SAVEFILE} ${APP_DIR_LISTS}/
+mv ${APP_FILE_PERM} ${APP_DIR_LISTS}/
 
 # #
 #   Finished
@@ -389,7 +382,7 @@ printf "  🕙 Elapsed time: %02d days %02d hrs %02d mins %02d secs\n" "$((T/864
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-printf "%-25s | %-30s\n" "  #️⃣  ${ARG_SAVEFILE}" "${COUNT_TOTAL_IP} IPs, ${COUNT_TOTAL_SUBNET} Subnets"
+printf "%-25s | %-30s\n" "  #️⃣  ${APP_FILE_PERM}" "${COUNT_TOTAL_IP} IPs, ${COUNT_TOTAL_SUBNET} Subnets"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 echo -e
 echo -e
