@@ -2,31 +2,34 @@
 
 # #
 #   @for                https://github.com/Aetherinox/csf-firewall
-#   @assoc              blocklist-generate.yml
+#   @workflow           blocklist-generate.yml
 #   @type               bash script
-#   @summary            fetches ip lists from an API source and formats them into a compatible ipset list
-#   
+#   @summary            when running this script, specify a website URL. The script will fetch the HTML code from the
+#                       website. This script will then pick out any text that appears to be an ipv4 or ipv5 address from the grep rule which is hard-coded.
+#                       For custom grep rules to get anything other than an IP, use bl-htmltext script
+#
+#                       There are two versions of this script:
+#                           bl-htmltext.sh      Uses a single URL and grep rule which are defined in the command to pull ANY text.
+#                                               Only supports a single URL
+#                           bl_htm              Supports multiple URLs, but doesn't allow you to specify a custom grep rule.
+#                                               It only grabs ipv4 and ipv6 addresses.
+#
+#   @usage              chmod +x ".github/scripts/bl-htm.sh"
+#                       run_yandex=".github/scripts/bl-htm.sh 02_privacy_yandex.ipset https://website.com/"
+#                       eval "./$run_yandex"
+#
+#   @command            bl-htm.sh
+#                           <ARG_SAVEFILE>
+#                           < <URL_1>, <URL_2> {...} >
+#                       bl-htm.sh 02_privacy_yandex.ipset <URL_1>
+#
 #                       📁 .github
 #                           📁 scripts
 #                               📄 bl-htm.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
-#   activated from github workflow:
-#       - .github/workflows/blocklist-generate.yml
-#
-#   within github workflow, run:
-#       chmod +x ".github/scripts/bl-htm.sh"
-#       run_yandex=".github/scripts/bl-htm.sh ${{ vars.API_02_YANDEX_OUT }} ${{ secrets.API_02_YANDEX_01 }}"
-#       eval "./$run_yandex"
-#
-#   IP addresses in static file are cleaned up to remove comments, and then saved to a new file
-#   within the public blocklists folder within the repository.
-#
-#   @uage               bl-htm.sh <ARG_SAVEFILE> [ <URL_BL_1>, <URL_BL_1> {...} ]
-#                       bl-htm.sh 02_privacy_yandex.ipset <API_URL_1>
 # #
-
 
 # #
 #   Arguments
@@ -45,6 +48,7 @@ ARG_SAVEFILE=$1
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
     echo -e "  ⭕ No output file specified for downloader script"
+    echo -e "     Usage: "
     echo -e
     exit 1
 fi
@@ -58,40 +62,42 @@ fi
 #    Define > General
 # #
 
-REPO="Aetherinox/dev-kw"                    # repository
-SECONDS=0                                   # set seconds count for beginning of script
-NOW=`date -u`                               # get current date in utc format
-FOLDER_SAVE="blocklists"                    # folder where to save .ipset file
-COUNT_LINES=0                               # number of lines in doc
-COUNT_TOTAL_SUBNET=0                        # number of IPs in all subnets combined
-COUNT_TOTAL_IP=0                            # number of single IPs (counts each line)
-ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"        # ipset id, /description/* and /category/* files must match this value
-UUID=$(uuidgen -m -N "${ID}" -n @url)       # uuid associated to each release
-CURL_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-DESCRIPTION=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/descriptions/${ID}.txt")
-CATEGORY=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/categories/${ID}.txt")
-EXPIRES=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/expires/${ID}.txt")
-URL_SOURCE=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/url-source/${ID}.txt")
+SECONDS=0                                               # set seconds count for beginning of script
+APP_DIR=${PWD}                                          # returns the folder this script is being executed in
+APP_REPO="Aetherinox/dev-kw"                            # repository
+APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
+APP_DIR_LISTS="blocklists"                              # folder where to save .ipset file
+COUNT_LINES=0                                           # number of lines in doc
+COUNT_TOTAL_SUBNET=0                                    # number of IPs in all subnets combined
+COUNT_TOTAL_IP=0                                        # number of single IPs (counts each line)
+TEMPL_NOW=`date -u`                                     # get current date in utc format
+TEMPL_ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"              # ipset id, /description/* and /category/* files must match this value
+TEMPL_UUID=$(uuidgen -m -N "${TEMPL_ID}" -n @url)       # uuid associated to each release
+APP_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
+TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/descriptions/${TEMPL_ID}.txt")
+TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/categories/${TEMPL_ID}.txt")
+TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/expires/${TEMPL_ID}.txt")
+TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/url-source/${TEMPL_ID}.txt")
 REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 
 # #
 #   Default Values
 # #
 
-if [[ "$DESCRIPTION" == *"404: Not Found"* ]]; then
-    DESCRIPTION="#   No description provided"
+if [[ "$TEMPL_DESC" == *"404: Not Found"* ]]; then
+    TEMPL_DESC="#   No description provided"
 fi
 
-if [[ "$CATEGORY" == *"404: Not Found"* ]]; then
-    CATEGORY="Uncategorized"
+if [[ "$TEMPL_CAT" == *"404: Not Found"* ]]; then
+    TEMPL_CAT="Uncategorized"
 fi
 
-if [[ "$EXPIRES" == *"404: Not Found"* ]]; then
-    EXPIRES="6 hours"
+if [[ "$TEMPL_EXP" == *"404: Not Found"* ]]; then
+    TEMPL_EXP="6 hours"
 fi
 
-if [[ "$URL_SOURCE" == *"404: Not Found"* ]]; then
-    URL_SOURCE="None"
+if [[ "$TEMP_URL_SRC" == *"404: Not Found"* ]]; then
+    TEMP_URL_SRC="None"
 fi
 
 # #
@@ -101,8 +107,8 @@ fi
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 echo -e "  Blocklist - ${ARG_SAVEFILE}"
-echo -e "  ID:         ${ID}"
-echo -e "  CATEGORY:   ${CATEGORY}"
+echo -e "  ID:         ${TEMPL_ID}"
+echo -e "  CATEGORY:   ${TEMPL_CAT}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 
 # #
@@ -141,7 +147,7 @@ download_list()
 
     echo -e "  🌎 Downloading IP blacklist to ${tempFile}"
 
-    jsonOutput=$(curl -sSL -A "${CURL_AGENT}" ${fnUrl} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
+    APP_OUT=$(curl -sSL -A "${APP_AGENT}" ${fnUrl} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
     sed -i 's/\-.*//' ${tempFile}                                           # remove hyphens for ip ranges
     sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                      # remove # and ; comments
     sed -i 's/[[:blank:]]*$//' ${tempFile}                                  # remove space / tab from EOL
@@ -254,18 +260,18 @@ ed -s ${ARG_SAVEFILE} <<END_ED
 # #
 #   🧱 Firewall Blocklist - ${ARG_SAVEFILE}
 #
-#   @url            https://raw.githubusercontent.com/${REPO}/main/${FOLDER_SAVE}/${ARG_SAVEFILE}
-#   @source         ${URL_SOURCE}
-#   @id             ${ID}
-#   @uuid           ${UUID}
-#   @updated        ${NOW}
+#   @url            https://raw.githubusercontent.com/${APP_REPO}/main/${APP_DIR_LISTS}/${ARG_SAVEFILE}
+#   @source         ${TEMP_URL_SRC}
+#   @id             ${TEMPL_ID}
+#   @uuid           ${TEMPL_UUID}
+#   @updated        ${TEMPL_NOW}
 #   @entries        ${COUNT_TOTAL_IP} ips
 #                   ${COUNT_TOTAL_SUBNET} subnets
 #                   ${COUNT_LINES} lines
-#   @expires        ${EXPIRES}
-#   @category       ${CATEGORY}
+#   @expires        ${TEMPL_EXP}
+#   @category       ${TEMPL_CAT}
 #
-${DESCRIPTION}
+${TEMPL_DESC}
 # #
 
 .
@@ -277,9 +283,9 @@ END_ED
 #   Move ipset to final location
 # #
 
-echo -e "  🚛 Move ${ARG_SAVEFILE} to ${FOLDER_SAVE}/${ARG_SAVEFILE}"
-mkdir -p ${FOLDER_SAVE}/
-mv ${ARG_SAVEFILE} ${FOLDER_SAVE}/
+echo -e "  🚛 Move ${ARG_SAVEFILE} to ${APP_DIR_LISTS}/${ARG_SAVEFILE}"
+mkdir -p ${APP_DIR_LISTS}/
+mv ${ARG_SAVEFILE} ${APP_DIR_LISTS}/
 
 # #
 #   Finished
