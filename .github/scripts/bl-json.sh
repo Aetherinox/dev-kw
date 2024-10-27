@@ -144,7 +144,7 @@ if [ -f $APP_FILE_PERM ]; then
     echo -e
    > ${APP_FILE_PERM}       # clean file
 else
-    echo -e "  📄 Creating ${APP_FILE_PERM}"
+    echo -e "  📁 Creating path $(dirname "${APP_FILE_PERM}") and ${APP_FILE_PERM}"
     echo -e
     mkdir -p $(dirname "${APP_FILE_PERM}")
     touch ${APP_FILE_PERM}
@@ -261,14 +261,6 @@ ${TEMPL_DESC}
 w
 q
 END_ED
-
-# #
-#   Move ipset to final location
-# #
-
-echo -e "  🚛 Create $(dirname "${APP_FILE_PERM}") and move ${APP_FILE_PERM} to ${APP_FILE_PERM}"
-mkdir -p $(dirname "${APP_FILE_PERM}")
-mv ${APP_FILE_PERM} ${APP_FILE_PERM}
 
 # #
 #   Finished
