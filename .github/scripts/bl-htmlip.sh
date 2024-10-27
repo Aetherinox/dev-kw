@@ -4,34 +4,35 @@
 #   @for                https://github.com/Aetherinox/csf-firewall
 #   @workflow           blocklist-generate.yml
 #   @type               bash script
-#   @summary            when running this script, specify a website URL. The script will fetch the HTML code from the
+#   @summary            generate ipset by fetching HTML in web url, pulls only ips with grep rule (cant be changed) | URLs: SINGLE
+#                       when running this script, specify a website URL. The script will fetch the HTML code from the
 #                       website. You should follow up with a grep filter/ rule to decide on what text to grab.
 #
 #                       There are two versions of this script:
-#                           bl-htmltext.sh      Uses a single URL and grep rule which are defined in the command to pull ANY text.
+#                           bl-htmlip.sh        Uses a single URL and grep rule which are defined in the command to pull ANY text.
 #                                               Only supports a single URL
 #                           bl_htm              Supports multiple URLs, but doesn't allow you to specify a custom grep rule.
 #                                               It only grabs ipv4 and ipv6 addresses.
 #
-#   @terminal           .github/scripts/bl-htmltext.sh 01_highrisk.ipset \
+#   @terminal           .github/scripts/bl-htmlip.sh 01_highrisk.ipset \
 #                           https://www.maxmind.com/en/high-risk-ip-sample-list \
 #                           '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'
 #
-#   @workflow           chmod +x ".github/scripts/bl-htmltext.sh"
-#                       run_yandex=".github/scripts/bl-htmltext.sh 02_privacy_yandex.ipset https://website.com/"
+#   @workflow           chmod +x ".github/scripts/bl-htmlip.sh"
+#                       run_yandex=".github/scripts/bl-htmlip.sh 02_privacy_yandex.ipset https://website.com/"
 #                       eval "./$run_yandex"
 #
-#   @command            bl-htm.sh
+#   @command            bl-html.sh
 #                           <ARG_SAVEFILE>
 #                           <URL_1>
 #                           <URL_2>
 #                           {...}
 #
-#                       bl-htmltext.sh 01_highrisk.ipset https://maxmind.com/en/high-risk-ip-sample-list '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'
+#                       bl-htmlip.sh 01_highrisk.ipset https://maxmind.com/en/high-risk-ip-sample-list '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'
 #
 #                       📁 .github
 #                           📁 scripts
-#                               📄 bl-htmltext.sh
+#                               📄 bl-htmlip.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
@@ -44,30 +45,23 @@
 #
 #       ARG_SAVEFILE        (str)       file to save IP addresses into
 #       ARG_URL             (str)       url to grab text from
-#       ARG_GREP            (str)       grep rule to determine what text is grabbed
 # #
 
 ARG_SAVEFILE=$1
 ARG_URL=$2
-ARG_GREP=$3
 
 # #
 #   Validation checks
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for bl-htmltext"
+    echo -e "  ⭕ No output file specified for bl-htmlip"
     echo -e
     exit 1
 fi
 
 if [[ -z "${ARG_URL}" ]]; then
     echo -e "  ⭕  Aborting -- no url specified"
-    exit 1
-fi
-
-if [[ -z "${ARG_GREP}" ]]; then
-    echo -e "  ⭕  Aborting -- no grep query specified"
     exit 1
 fi
 
@@ -78,6 +72,7 @@ fi
 SECONDS=0                                               # set seconds count for beginning of script
 APP_DIR=${PWD}                                          # returns the folder this script is being executed in
 APP_REPO="Aetherinox/dev-kw"                            # repository
+APP_REPO_BRANCH="main"                                  # repository branch
 APP_OUT=""                                              # results of curl command
 APP_FILE_TEMP="${ARG_SAVEFILE}.tmp"                     # temp file when building ipset list
 APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
@@ -91,10 +86,10 @@ TEMPL_NOW=`date -u`                                     # get current date in ut
 TEMPL_ID="${APP_FILE_PERM//[^[:alnum:]]/_}"             # ipset id, /description/* and /category/* files must match this value
 TEMPL_UUID=$(uuidgen -m -N "${TEMPL_ID}" -n @url)       # uuid associated to each release
 APP_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/descriptions/${TEMPL_ID}.txt")
-TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/categories/${TEMPL_ID}.txt")
-TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/expires/${TEMPL_ID}.txt")
-TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/url-source/${TEMPL_ID}.txt")
+TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/descriptions/${TEMPL_ID}.txt")
+TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/categories/${TEMPL_ID}.txt")
+TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/expires/${TEMPL_ID}.txt")
+TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/url-source/${TEMPL_ID}.txt")
 REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 REGEX_ISNUM='^[0-9]+$'
 
@@ -244,7 +239,7 @@ ed -s ${APP_FILE_PERM} <<END_ED
 # #
 #   🧱 Firewall Blocklist - ${APP_FILE_PERM}
 #
-#   @url            https://raw.githubusercontent.com/${APP_REPO}/main/${APP_DIR_LISTS}/${APP_FILE_PERM}
+#   @url            https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/${APP_DIR_LISTS}/${APP_FILE_PERM}
 #   @source         ${TEMP_URL_SRC}
 #   @id             ${TEMPL_ID}
 #   @uuid           ${TEMPL_UUID}

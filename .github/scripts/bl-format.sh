@@ -4,22 +4,23 @@
 #   @for                https://github.com/Aetherinox/csf-firewall
 #   @workflow           blocklist-generate.yml
 #   @type               bash script
-#   @summary            this bash script does not generate ipsets from a url, it simply processes ipsets provided via stdin.
+#   @summary            generate ipset by from an existing list of IPs. does not generate ips itself. only validates a list provided
+#                       this bash script does not generate ipsets from a url, it simply processes ipsets provided via stdin.
 #                       you must generate your ipsets using outside commands and then feed the list of ips into this script.
 #                       to get the IPs, you must use curl, jq, whois, and grep elsewhere.
 #   
-#   @terminal           whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{gsub("(route:|route6:)","");print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_facebook.ipset
+#   @terminal           whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{gsub("(route:|route6:)","");print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_facebook.ipset
 #
 #   @workflow           # Privacy › Facebook
-#                       chmod +x ".github/scripts/bl-template.sh"
-#                       whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{gsub("(route:|route6:)","");print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_facebook.ipset
+#                       chmod +x ".github/scripts/bl-format.sh"
+#                       whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{gsub("(route:|route6:)","");print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_facebook.ipset
 #
-#   @command            bl-template.sh
+#   @command            bl-format.sh
 #                           <ARG_SAVEFILE>
 #
 #                       📁 .github
 #                           📁 scripts
-#                               📄 bl-template.sh
+#                               📄 bl-format.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
@@ -40,7 +41,7 @@ ARG_SAVEFILE=$1
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for bl-template"
+    echo -e "  ⭕ No output file specified for bl-format"
     echo -e
     exit 1
 fi
@@ -52,6 +53,7 @@ fi
 SECONDS=0                                               # set seconds count for beginning of script
 APP_DIR=${PWD}                                          # returns the folder this script is being executed in
 APP_REPO="Aetherinox/dev-kw"                            # repository
+APP_REPO_BRANCH="main"                                  # repository branch
 APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
 APP_FILE_TEMP="${ARG_SAVEFILE}.tmp"                     # temp file when building ipset list
 APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
@@ -65,10 +67,10 @@ TEMPL_NOW=`date -u`                                     # get current date in ut
 TEMPL_ID="${APP_FILE_PERM//[^[:alnum:]]/_}"             # ipset id, /description/* and /category/* files must match this value
 TEMPL_UUID=$(uuidgen -m -N "${TEMPL_ID}" -n @url)       # uuid associated to each release
 APP_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/descriptions/${TEMPL_ID}.txt")
-TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/categories/${TEMPL_ID}.txt")
-TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/expires/${TEMPL_ID}.txt")
-TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/url-source/${TEMPL_ID}.txt")
+TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/descriptions/${TEMPL_ID}.txt")
+TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/categories/${TEMPL_ID}.txt")
+TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/expires/${TEMPL_ID}.txt")
+TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/url-source/${TEMPL_ID}.txt")
 REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 REGEX_ISNUM='^[0-9]+$'
 
@@ -280,7 +282,7 @@ ed -s ${APP_FILE_PERM} <<END_ED
 # #
 #   🧱 Firewall Blocklist - ${APP_FILE_PERM}
 #
-#   @url            https://raw.githubusercontent.com/${APP_REPO}/main/${APP_DIR_LISTS}/${APP_FILE_PERM}
+#   @url            https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/${APP_DIR_LISTS}/${APP_FILE_PERM}
 #   @source         ${TEMP_URL_SRC}
 #   @id             ${TEMPL_ID}
 #   @uuid           ${TEMPL_UUID}

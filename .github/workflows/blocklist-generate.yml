@@ -1,12 +1,19 @@
 # #
 #   @usage              https://github.com/Aetherinox/csf-firewall
 #   @type               github workflow
-#   
-#   used in combination with .github/scripts/bl-download.sh
 #
 #   download AbuseIPDB ip list after list of ips are downloaded, merges them with a static list
 #   that is not updated as often which contains a list of long-term abusive ip addresses
-#   
+#
+#   📄 bl-master.sh               generate master ipset | URLs: VARARG
+#   📄 bl-plain.sh                generate ipset from online plain-text url / page | URLs: VARARG
+#   📄 bl-json.sh                 generate ipset from json formatted web url. requires url and jq query | URLs: SINGLE
+#   📄 bl-htmlip.sh               generate ipset by fetching HTML in web url, pulls only ips with grep rule (cant be changed) | URLs: SINGLE
+#   📄 bl-html.sh                 generate ipset by fetching HTML in web url, does not run its own grep, must be specified in command | URLs: VARARG
+#   📄 bl-block.sh                generate ipset by fetching locally specified file in /blocks/ repo folder
+#   📄 bl-format.sh               generate ipset by from an existing list of IPs. does not generate ips itself. only validates a list provided
+#   📄 bl-spf.sh                  generate ipset by fetching _spf ips from domain
+#
 #   local test requires the same structure as the github workflow
 #       📁 .github
 #           📁 blocks
@@ -15,11 +22,14 @@
 #               📁 privacy
 #                   📄 01.ipset
 #           📁 scripts
-#               📄 bl-download.sh
-#               📄 bl-htmltext.sh
-#               📄 bl-json.sh
 #               📄 bl-master.sh
-#               📄 bl-static.sh
+#               📄 bl-plain.sh
+#               📄 bl-json.sh
+#               📄 bl-htmlip.sh
+#               📄 bl-html.sh
+#               📄 bl-block.sh
+#               📄 bl-format.sh
+#               📄 bl-spf.sh
 #           📁 workflows
 #               📄 blocklist-generate.yml
 # #
@@ -127,12 +137,12 @@ jobs:
 
                   #   Set Permissions
                   chmod +x ".github/scripts/bl-master.sh"
-                  chmod +x ".github/scripts/bl-template.sh"
-                  chmod +x ".github/scripts/bl-htmltext.sh"
-                  chmod +x ".github/scripts/bl-htm.sh"
-                  chmod +x ".github/scripts/bl-static.sh"
+                  chmod +x ".github/scripts/bl-format.sh"
+                  chmod +x ".github/scripts/bl-htmlip.sh"
+                  chmod +x ".github/scripts/bl-html.sh"
+                  chmod +x ".github/scripts/bl-block.sh"
                   chmod +x ".github/scripts/bl-json.sh"
-                  chmod +x ".github/scripts/bl-download.sh"
+                  chmod +x ".github/scripts/bl-plain.sh"
                   chmod +x ".github/scripts/bl-spf.sh"
 
             # #
@@ -155,7 +165,7 @@ jobs:
                   run_master=".github/scripts/bl-master.sh ${{ vars.API_01_OUT }} ${{ secrets.API_01_FILE_01 }} ${{ secrets.API_01_FILE_02 }} ${{ secrets.API_01_FILE_03 }} ${{ secrets.API_01_FILE_04 }} ${{ secrets.API_01_FILE_05 }} ${{ secrets.API_01_FILE_06 }} ${{ secrets.API_01_FILE_07 }} ${{ secrets.API_01_FILE_08 }}"
                   eval "./$run_master"
 
-                  run_highrisk=".github/scripts/bl-htmltext.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
+                  run_highrisk=".github/scripts/bl-htmlip.sh ${{ vars.API_01_HIGHRISK_OUT }} ${{ secrets.API_01_HIGHRISK_URL }} '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'"
                   eval "./$run_highrisk"
 
             # #
@@ -167,7 +177,7 @@ jobs:
               run: |
 
                   #   Privacy › General
-                  run_general=".github/scripts/bl-static.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
+                  run_general=".github/scripts/bl-block.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
                   eval "./$run_general"
 
                   #   Privacy › Google
@@ -195,55 +205,55 @@ jobs:
                   eval "./$run_amz_ec2"
 
                   #   Privacy › Facebook
-                  whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{gsub("(route:|route6:)","");print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_facebook.ipset
+                  whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{gsub("(route:|route6:)","");print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_facebook.ipset
 
                   #   Privacy › Ahrefs
-                  curl -sSL -A "${{ env.USERAGENT }}" https://api.ahrefs.com/v3/public/crawler-ips | jq -r '.ips[].ip_address | select( . != null )' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_ahrefs.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://api.ahrefs.com/v3/public/crawler-ips | jq -r '.ips[].ip_address | select( . != null )' | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_ahrefs.ipset
 
                   #   Privacy › DuckDuckGo
-                  curl -sSL -A "${{ env.USERAGENT }}" https://raw.githubusercontent.com/duckduckgo/duckduckgo-help-pages/master/_docs/results/duckduckbot.md | grep "^\- " | awk '{gsub("-",""); print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_duckduckgo.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://raw.githubusercontent.com/duckduckgo/duckduckgo-help-pages/master/_docs/results/duckduckbot.md | grep "^\- " | awk '{gsub("-",""); print}' | awk '{gsub(/ /,""); print}' | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_duckduckgo.ipset
 
                   #   Privacy › Telegram
-                  curl -sSL -A "${{ env.USERAGENT }}" https://core.telegram.org/resources/cidr.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_telegram.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://core.telegram.org/resources/cidr.txt | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_telegram.ipset
 
                   #   Privacy › Uptime Robot
-                  curl -sSL -A "${{ env.USERAGENT }}" https://uptimerobot.com/inc/files/ips/IPv4andIPv6.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_uptimerobot.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://uptimerobot.com/inc/files/ips/IPv4andIPv6.txt | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_uptimerobot.ipset
 
                   #   Privacy › Pingdom
                   PINGDOM_IPv4=$(curl -sSL -A "${{ env.USERAGENT }}" https://my.pingdom.com/probes/ipv4)
                   PINGDOM_IPv6=$(curl -sSL -A "${{ env.USERAGENT }}" https://my.pingdom.com/probes/ipv6)
                   PINGDOM_LIST="${PINGDOM_IPv4} ${PINGDOM_IPv6}"
-                  echo "$PINGDOM_LIST" | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_pingdom.ipset
+                  echo "$PINGDOM_LIST" | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_pingdom.ipset
 
                   #   Privacy › Stripe › API
-                  curl -sSL -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_api.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_stripe_api.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_api.txt | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_stripe_api.ipset
 
                   #   Privacy › Stripe › Webhooks
-                  curl -sSL -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_webhooks.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_stripe_webhooks.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_webhooks.txt | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_stripe_webhooks.ipset
 
                   #   Privacy › Stripe › Armada Gator
-                  curl -sSL -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_armada_gator.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_stripe_armada_gator.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://stripe.com/files/ips/ips_armada_gator.txt | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_stripe_armada_gator.ipset
 
                   #   Privacy › RSS API
-                  curl -sSL -A "${{ env.USERAGENT }}" https://rssapi.net/ips.txt | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_rssapi.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://rssapi.net/ips.txt | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_rssapi.ipset
 
                   #   Privacy › WebPageTest
-                  curl -sSL -A "${{ env.USERAGENT }}" https://www.webpagetest.org/addresses.php?f=json | jq -r '.data[].addresses[] | select( . != null )' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_webpagetest.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://www.webpagetest.org/addresses.php?f=json | jq -r '.data[].addresses[] | select( . != null )' | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_webpagetest.ipset
 
                   #   Privacy > Bunny CDN
                   BUNNYCDN_IPv4=$(curl -sSL -A "${{ env.USERAGENT }}" https://api.bunny.net/system/edgeserverlist/plain)
                   BUNNYCDN_IPv6=$(curl -sSL -A "${{ env.USERAGENT }}" https://api.bunny.net/system/edgeserverlist/ipv6 | jq -r '.[] | select( . != null )')
                   BUNNYCDN_LIST="${BUNNYCDN_IPv4} ${BUNNYCDN_IPv6}"
-                  echo "$BUNNYCDN_LIST" | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_bunnycdn.ipset
+                  echo "$BUNNYCDN_LIST" | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_bunnycdn.ipset
 
                   #   Privacy › Cloudflare CDN
                   CLOUDFLARE_IPv4=$(curl -sSL -A "${{ env.USERAGENT }}" https://www.cloudflare.com/ips-v4)
                   CLOUDFLARE_IPv6=$(curl -sSL -A "${{ env.USERAGENT }}" https://www.cloudflare.com/ips-v6)
                   CLOUDFLARE_LIST="${CLOUDFLARE_IPv4} ${CLOUDFLARE_IPv6}"
-                  echo "$CLOUDFLARE_LIST" | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_cloudflarecdn.ipset
+                  echo "$CLOUDFLARE_LIST" | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_cloudflarecdn.ipset
 
                   #   Privacy › AppleBot
-                  curl -sSL -A "${{ env.USERAGENT }}" https://search.developer.apple.com/applebot.json | jq -r '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty' | $GITHUB_WORKSPACE/.github/scripts/bl-template.sh 02_privacy_applebot.ipset
+                  curl -sSL -A "${{ env.USERAGENT }}" https://search.developer.apple.com/applebot.json | jq -r '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty' | $GITHUB_WORKSPACE/.github/scripts/bl-format.sh 02_privacy_applebot.ipset
 
             # #
             #   Generate > Spam
@@ -252,7 +262,7 @@ jobs:
             - name: "🧱 Generate › Spam"
               id: task_blocklist_generate_spam
               run: |
-                  run_spamhaus=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_SPAMHAUS_OUT }} ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
+                  run_spamhaus=".github/scripts/bl-plain.sh ${{ vars.API_03_SPAM_SPAMHAUS_OUT }} ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
                   eval "./$run_spamhaus"
 
             # #
@@ -265,8 +275,8 @@ jobs:
               id: task_blocklist_spam_generate_forums
               if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
               run: |
-                  chmod +x ".github/scripts/bl-download.sh"
-                  run_forums=".github/scripts/bl-download.sh ${{ vars.API_03_SPAM_FORUMS_OUT }} ${{ secrets.API_03_SPAM_FORUMS_URL }}"
+                  chmod +x ".github/scripts/bl-plain.sh"
+                  run_forums=".github/scripts/bl-plain.sh ${{ vars.API_03_SPAM_FORUMS_OUT }} ${{ secrets.API_03_SPAM_FORUMS_URL }}"
                   eval "./$run_forums"
 
             # #

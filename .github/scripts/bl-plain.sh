@@ -4,34 +4,31 @@
 #   @for                https://github.com/Aetherinox/csf-firewall
 #   @workflow           blocklist-generate.yml
 #   @type               bash script
-#   @summary            when running this script, specify a website URL. The script will fetch the HTML code from the
-#                       website. This script will then pick out any text that appears to be an ipv4 or ipv5 address from the grep rule which is hard-coded.
-#                       For custom grep rules to get anything other than an IP, use bl-htmltext script
+#   @summary            generate ipset from online plain-text url / page | URLs: VARARG
+#                       Uses a URL to fetch a plaintext file from the internet.
+#                       Then reads each line, counts how many IP addresses and subnets it contains, and removes 
+#                       any comments the original file had, including text that starts with the characters `;` and `#`.
+#                       Supports multiple URLs as arguments.
+# 
+#   @terminal           .github/scripts/bl-plain.sh \
+#                           03_spam_spamhaus.ipset \
+#                           https://www.spamhaus.org/drop/drop.txt
 #
-#                       There are two versions of this script:
-#                           bl-htmltext.sh      Uses a single URL and grep rule which are defined in the command to pull ANY text.
-#                                               Only supports a single URL
-#                           bl_htm              Supports multiple URLs, but doesn't allow you to specify a custom grep rule.
-#                                               It only grabs ipv4 and ipv6 addresses.
+#   @workflow           chmod +x ".github/scripts/bl-plain.sh"
+#                       run_spamhaus=".github/scripts/bl-plain.sh 03_spam_spamhaus.ipset https://www.spamhaus.org/drop/drop.txt"
+#                       eval "./$run_spamhaus"
 #
-#   @terminal           .github/scripts/bl-htm.sh \
-#                           02_privacy_yandex.ipset \
-#                           https://udger.com/resources/ua-list/bot-detail?bot=YandexBot
-#
-#   @workflow           # Privacy › Yandex
-#                       chmod +x ".github/scripts/bl-htm.sh"
-#                       run_yandex=".github/scripts/bl-htm.sh 02_privacy_yandex.ipset https://udger.com/resources/ua-list/bot-detail?bot=YandexBot"
-#                       eval "./$run_yandex"
-#
-#   @command            bl-htm.sh
+#   @uage               bl-plain.sh
 #                           <ARG_SAVEFILE>
 #                           <URL_1>
 #                           <URL_2>
 #                           {...}
+#                       bl-plain.sh 03_spam_spamhaus.ipset URL_1 
+#                       bl-plain.sh 03_spam_spamhaus.ipset URL_1 URL_2 URL_3
 #
 #                       📁 .github
 #                           📁 scripts
-#                               📄 bl-htm.sh
+#                               📄 bl-plain.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
@@ -43,18 +40,13 @@
 #   This bash script has the following arguments:
 #
 #       ARG_SAVEFILE        (str)       file to save IP addresses into
-#       { ... }             (varg)      list of URLs to API end-points
+#       { ... }             (varg)      list of URLs to download files from
 # #
 
 ARG_SAVEFILE=$1
 
-# #
-#   Validation checks
-# #
-
 if [[ -z "${ARG_SAVEFILE}" ]]; then
     echo -e "  ⭕ No output file specified for downloader script"
-    echo -e "     Usage: "
     echo -e
     exit 1
 fi
@@ -71,8 +63,9 @@ fi
 SECONDS=0                                               # set seconds count for beginning of script
 APP_DIR=${PWD}                                          # returns the folder this script is being executed in
 APP_REPO="Aetherinox/dev-kw"                            # repository
-APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
+APP_REPO_BRANCH="main"                                  # repository branch
 APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
+APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
 APP_DIR_LISTS="blocklists"                              # folder where to save .ipset file
 COUNT_LINES=0                                           # number of lines in doc
 COUNT_TOTAL_SUBNET=0                                    # number of IPs in all subnets combined
@@ -81,10 +74,10 @@ TEMPL_NOW=`date -u`                                     # get current date in ut
 TEMPL_ID="${APP_FILE_PERM//[^[:alnum:]]/_}"             # ipset id, /description/* and /category/* files must match this value
 TEMPL_UUID=$(uuidgen -m -N "${TEMPL_ID}" -n @url)       # uuid associated to each release
 APP_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/descriptions/${TEMPL_ID}.txt")
-TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/categories/${TEMPL_ID}.txt")
-TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/expires/${TEMPL_ID}.txt")
-TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/main/.github/url-source/${TEMPL_ID}.txt")
+TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/descriptions/${TEMPL_ID}.txt")
+TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/categories/${TEMPL_ID}.txt")
+TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/expires/${TEMPL_ID}.txt")
+TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/url-source/${TEMPL_ID}.txt")
 REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 REGEX_ISNUM='^[0-9]+$'
 
@@ -156,7 +149,7 @@ download_list()
 
     echo -e "  🌎 Downloading IP blacklist to ${tempFile}"
 
-    APP_OUT=$(curl -sSL -A "${APP_AGENT}" ${fnUrl} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
+    curl -sSL -A "${CURL_AGENT}" ${fnUrl} -o ${tempFile} >/dev/null 2>&1    # download file
     sed -i 's/\-.*//' ${tempFile}                                           # remove hyphens for ip ranges
     sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                      # remove # and ; comments
     sed -i 's/[[:blank:]]*$//' ${tempFile}                                  # remove space / tab from EOL
@@ -208,6 +201,9 @@ download_list()
     #   Count lines and subnets
     # #
 
+    COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")                        # GLOBAL add commas to thousands
+    COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                # GLOBAL add commas to thousands
+
     DL_COUNT_TOTAL_IP=$(printf "%'d" "$DL_COUNT_TOTAL_IP")                  # LOCAL add commas to thousands
     DL_COUNT_TOTAL_SUBNET=$(printf "%'d" "$DL_COUNT_TOTAL_SUBNET")          # LOCAL add commas to thousands
 
@@ -253,13 +249,6 @@ COUNT_LINES=$(wc -l < ${APP_FILE_PERM})                                     # co
 COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                                  # GLOBAL add commas to thousands
 
 # #
-#   Format count totals since we no longer need to add
-# #
-
-COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")                            # GLOBAL add commas to thousands
-COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                    # GLOBAL add commas to thousands
-
-# #
 #   ed
 #       0a  top of file
 # #
@@ -269,7 +258,7 @@ ed -s ${APP_FILE_PERM} <<END_ED
 # #
 #   🧱 Firewall Blocklist - ${APP_FILE_PERM}
 #
-#   @url            https://raw.githubusercontent.com/${APP_REPO}/main/${APP_DIR_LISTS}/${APP_FILE_PERM}
+#   @url            https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/${APP_DIR_LISTS}/${APP_FILE_PERM}
 #   @source         ${TEMP_URL_SRC}
 #   @id             ${TEMPL_ID}
 #   @uuid           ${TEMPL_UUID}
