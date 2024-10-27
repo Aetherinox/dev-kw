@@ -146,7 +146,8 @@ if [ -f $APP_FILE_PERM ]; then
 else
     echo -e "  📄 Creating ${APP_FILE_PERM}"
     echo -e
-   touch ${APP_FILE_PERM}
+    mkdir -p $(dirname "${APP_FILE_PERM}")
+    touch ${APP_FILE_PERM}
 fi
 
 # #
