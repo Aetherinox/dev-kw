@@ -58,26 +58,41 @@ fi
 #    Define > General
 # #
 
+REPO="Aetherinox/dev-kw"                    # repository
+SECONDS=0                                   # set seconds count for beginning of script
+NOW=`date -u`                               # get current date in utc format
+FOLDER_SAVE="blocklists"                    # folder where to save .ipset file
+COUNT_LINES=0                               # number of lines in doc
+COUNT_TOTAL_SUBNET=0                        # number of IPs in all subnets combined
+COUNT_TOTAL_IP=0                            # number of single IPs (counts each line)
+ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"        # ipset id, /description/* and /category/* files must match this value
+UUID=$(uuidgen -m -N "${ID}" -n @url)       # uuid associated to each release
 CURL_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-FOLDER_SAVETO="blocklists"
-SECONDS=0
-NOW=`date -u`
-COUNT_LINES=0                   # number of lines in doc
-COUNT_TOTAL_SUBNET=0            # number of IPs in all subnets combined
-COUNT_TOTAL_IP=0                # number of single IPs (counts each line)
-ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"
-DESCRIPTION=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/descriptions/${ID}.txt")
-CATEGORY=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/categories/${ID}.txt")
-EXPIRES=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/Aetherinox/csf-firewall/main/.github/expires/${ID}.txt")
-regexURL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
+DESCRIPTION=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/descriptions/${ID}.txt")
+CATEGORY=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/categories/${ID}.txt")
+EXPIRES=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/expires/${ID}.txt")
+URL_SOURCE=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/url-source/${ID}.txt")
+REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 
 # #
 #   Default Values
 # #
 
-DESCRIPTION=$([ "${DESCRIPTION}" == *"404: Not Found"* ] && echo "#   No description provided" || echo "${DESCRIPTION}")
-CATEGORY=$([ "${CATEGORY}" == *"404: Not Found"* ] && echo "Uncategorized" || echo "${CATEGORY}")
-EXPIRES=$([ "${EXPIRES}" == *"404: Not Found"* ] && echo "6 hours" || echo "${EXPIRES}")
+if [[ "$DESCRIPTION" == *"404: Not Found"* ]]; then
+    DESCRIPTION="#   No description provided"
+fi
+
+if [[ "$CATEGORY" == *"404: Not Found"* ]]; then
+    CATEGORY="Uncategorized"
+fi
+
+if [[ "$EXPIRES" == *"404: Not Found"* ]]; then
+    EXPIRES="6 hours"
+fi
+
+if [[ "$URL_SOURCE" == *"404: Not Found"* ]]; then
+    URL_SOURCE="None"
+fi
 
 # #
 #   Output > Header
@@ -126,7 +141,7 @@ download_list()
 
     echo -e "  🌎 Downloading IP blacklist to ${tempFile}"
 
-    jsonOutput=$(curl -Ss -A "${CURL_AGENT}" ${fnUrl} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
+    jsonOutput=$(curl -sSL -A "${CURL_AGENT}" ${fnUrl} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
     sed -i 's/\-.*//' ${tempFile}                                           # remove hyphens for ip ranges
     sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                      # remove # and ; comments
     sed -i 's/[[:blank:]]*$//' ${tempFile}                                  # remove space / tab from EOL
@@ -197,7 +212,7 @@ download_list()
 # #
 
 for arg in "${@:2}"; do
-    if [[ $arg =~ $regexURL ]]; then
+    if [[ $arg =~ $REGEX_URL ]]; then
         download_list ${arg} ${ARG_SAVEFILE}
         echo -e
     fi
@@ -239,12 +254,14 @@ ed -s ${ARG_SAVEFILE} <<END_ED
 # #
 #   🧱 Firewall Blocklist - ${ARG_SAVEFILE}
 #
-#   @url            https://github.com/Aetherinox/csf-firewall
+#   @url            https://raw.githubusercontent.com/${REPO}/main/${FOLDER_SAVE}/${ARG_SAVEFILE}
+#   @source         ${URL_SOURCE}
 #   @id             ${ID}
+#   @uuid           ${UUID}
 #   @updated        ${NOW}
-#   @entries        $COUNT_TOTAL_IP ips
-#                   $COUNT_TOTAL_SUBNET subnets
-#                   $COUNT_LINES lines
+#   @entries        ${COUNT_TOTAL_IP} ips
+#                   ${COUNT_TOTAL_SUBNET} subnets
+#                   ${COUNT_LINES} lines
 #   @expires        ${EXPIRES}
 #   @category       ${CATEGORY}
 #
@@ -260,9 +277,9 @@ END_ED
 #   Move ipset to final location
 # #
 
-echo -e "  🚛 Move ${ARG_SAVEFILE} to ${FOLDER_SAVETO}/${ARG_SAVEFILE}"
-mkdir -p ${FOLDER_SAVETO}/
-mv ${ARG_SAVEFILE} ${FOLDER_SAVETO}/
+echo -e "  🚛 Move ${ARG_SAVEFILE} to ${FOLDER_SAVE}/${ARG_SAVEFILE}"
+mkdir -p ${FOLDER_SAVE}/
+mv ${ARG_SAVEFILE} ${FOLDER_SAVE}/
 
 # #
 #   Finished

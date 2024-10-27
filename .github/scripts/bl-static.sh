@@ -78,7 +78,7 @@ DESCRIPTION=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${R
 CATEGORY=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/categories/${ID}.txt")
 EXPIRES=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/expires/${ID}.txt")
 URL_SOURCE=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/url-source/${ID}.txt")
-regexURL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
+REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 
 # #
 #   Default Values

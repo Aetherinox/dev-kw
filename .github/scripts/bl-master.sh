@@ -77,14 +77,16 @@ FOLDER_SAVE="blocklists"                    # folder where to save .ipset file
 COUNT_LINES=0                               # number of lines in doc
 COUNT_TOTAL_SUBNET=0                        # number of IPs in all subnets combined
 COUNT_TOTAL_IP=0                            # number of single IPs (counts each line)
+BLOCKS_COUNT_TOTAL_IP=0                     # number of ips for one particular file
+BLOCKS_COUNT_TOTAL_SUBNET=0                 # number of subnets for one particular file
 ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"        # ipset id, /description/* and /category/* files must match this value
 UUID=$(uuidgen -m -N "${ID}" -n @url)       # uuid associated to each release
 CURL_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-DESCRIPTION=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/descriptions/${ID}.txt")
-CATEGORY=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/categories/${ID}.txt")
-EXPIRES=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/expires/${ID}.txt")
-URL_SOURCE=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/url-source/${ID}.txt")
-regexURL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
+DESCRIPTION=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/descriptions/${ID}.txt")
+CATEGORY=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/categories/${ID}.txt")
+EXPIRES=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/expires/${ID}.txt")
+URL_SOURCE=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/url-source/${ID}.txt")
+REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 
 # #
 #   Default Values
@@ -153,7 +155,7 @@ download_list()
 
     echo -e "  🌎 Downloading IP blacklist to ${tempFile}"
 
-    curl -sS -A "${CURL_AGENT}" ${fnUrl} -o ${tempFile} >/dev/null 2>&1     # download file
+    curl -sSL -A "${CURL_AGENT}" ${fnUrl} -o ${tempFile} >/dev/null 2>&1     # download file
     sed -i 's/\-.*//' ${tempFile}                                           # remove hyphens for ip ranges
     sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                      # remove # and ; comments
     sed -i 's/[[:blank:]]*$//' ${tempFile}                                  # remove space / tab from EOL
@@ -229,7 +231,7 @@ download_list()
 # #
 
 for arg in "${@:3}"; do
-    if [[ $arg =~ $regexURL ]]; then
+    if [[ $arg =~ $REGEX_URL ]]; then
         download_list ${arg} ${ARG_SAVEFILE}
         echo -e
     fi

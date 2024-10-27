@@ -50,7 +50,7 @@ if [[ -z "${ARG_SAVEFILE}" ]]; then
     exit 1
 fi
 
-if [[ -z "${ARG_JSON_URL}" ]] || [[ ! $ARG_JSON_URL =~ $regexURL ]]; then
+if [[ -z "${ARG_JSON_URL}" ]] || [[ ! $ARG_JSON_URL =~ $REGEX_URL ]]; then
     echo -e "  ⭕ Invalid URL specified for ${ARG_SAVEFILE}"
     echo -e
     exit 1
@@ -76,11 +76,11 @@ COUNT_TOTAL_IP=0                            # number of single IPs (counts each 
 ID="${ARG_SAVEFILE//[^[:alnum:]]/_}"        # ipset id, /description/* and /category/* files must match this value
 UUID=$(uuidgen -m -N "${ID}" -n @url)       # uuid associated to each release
 CURL_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-DESCRIPTION=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/descriptions/${ID}.txt")
-CATEGORY=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/categories/${ID}.txt")
-EXPIRES=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/expires/${ID}.txt")
-URL_SOURCE=$(curl -sS -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/url-source/${ID}.txt")
-regexURL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
+DESCRIPTION=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/descriptions/${ID}.txt")
+CATEGORY=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/categories/${ID}.txt")
+EXPIRES=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/expires/${ID}.txt")
+URL_SOURCE=$(curl -sSL -A "${CURL_AGENT}" "https://raw.githubusercontent.com/${REPO}/main/.github/url-source/${ID}.txt")
+REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 
 # #
 #   Default Values
@@ -145,7 +145,7 @@ echo -e "  🌎 Downloading IP blacklist to ${ARG_SAVEFILE}"
 # #
 
 tempFile="${ARG_SAVEFILE}.tmp"
-jsonOutput=$(curl -Ss -A "${CURL_AGENT}" ${ARG_JSON_URL} | jq -r "${ARG_JSON_QRY}" | grep -v "^#" | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
+jsonOutput=$(curl -sSL -A "${CURL_AGENT}" ${ARG_JSON_URL} | jq -r "${ARG_JSON_QRY}" | grep -v "^#" | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${tempFile})
 sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${tempFile}                      # remove # and ; comments
 sed -i 's/\-.*//' ${tempFile}                                           # remove hyphens for ip ranges
 sed -i 's/[[:blank:]]*$//' ${tempFile}                                  # remove space / tab from EOL

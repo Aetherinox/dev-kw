@@ -1,1 +1,2 @@
-Privacy
+#   Subscribe to RSS feeds and receive nearly real-time updates via webhooks.
+#   Consume any RSS, ATOM, and JSON feed.

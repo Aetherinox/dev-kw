@@ -4,34 +4,18 @@
 #   @for                https://github.com/Aetherinox/csf-firewall
 #   @assoc              blocklist-generate.yml
 #   @type               bash script
-#   @summary            fetches a website using curl, converts all of the html over to plain text, and then grep can be used to extract
-#                       data
+#   @summary            returns IP addresses associated with record
 #   
 #                       📁 .github
-#                           📁 blocks
-#                               📁 bruteforce
-#                                   📄 *.txt
 #                           📁 scripts
-#                               📄 bl-htmltext.sh
+#                               📄 bl-spf.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
 #   activated from github workflow:
 #       - .github/workflows/blocklist-generate.yml
 #
-#   within github workflow, run:
-#       chmod +x ".github/scripts/bl-static.sh"
-#       run_general=".github/scripts/bl-static.sh ${{ vars.API_02_GENERAL_OUT }} privacy"
-#       eval "./$run_general"
-#
-#   fetches entries from a local static file. these files are located within the repo directory
-#       - .github/blocks/${ARG_BLOCKS_CAT}/*.ipset
-#
-#   IP addresses in static file are cleaned up to remove comments, and then saved to a new file
-#   within the public blocklists folder within the repository.
-#
-#   @uage               bl-static.sh <ARG_SAVEFILE> <ARG_BLOCKS_CAT>
-#                       bl-static.sh 02_privacy_general.ipset privacy
+#   @uage               echo "yandex.ru" | .github/scripts/bl-spf.sh 02_privacy_yandex.ipset
 # #
 
 # #
@@ -40,30 +24,17 @@
 #   This bash script has the following arguments:
 #
 #       ARG_SAVEFILE        (str)       file to save IP addresses into
-#       ARG_BLOCKS_CAT      (str)       which blocks folder to inject static IP addresses from
 # #
 
 ARG_SAVEFILE=$1
-ARG_URL=$2
-ARG_GREP=$3
 
 # #
 #   Validation checks
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
-    echo -e "  ⭕ No output file specified for bl-htmltext"
+    echo -e "  ⭕ No output file specified for bl-template"
     echo -e
-    exit 1
-fi
-
-if [[ -z "${ARG_URL}" ]]; then
-    echo -e "  ⭕  Aborting -- no url specified"
-    exit 1
-fi
-
-if [[ -z "${ARG_GREP}" ]]; then
-    echo -e "  ⭕  Aborting -- no grep query specified"
     exit 1
 fi
 
@@ -74,7 +45,7 @@ fi
 REPO="Aetherinox/dev-kw"                    # repository
 SECONDS=0                                   # set seconds count for beginning of script
 NOW=`date -u`                               # get current date in utc format
-OUTPUT=""                                   # results of curl command
+OUTPUT=""                                   # each ip fetched from stdin will be stored in this var
 FILE_TEMP="${ARG_SAVEFILE}.tmp"             # temp file when building ipset list
 FOLDER_SAVE="blocklists"                    # folder where to save .ipset file
 COUNT_LINES=0                               # number of lines in doc
@@ -110,6 +81,138 @@ fi
 if [[ "$URL_SOURCE" == *"404: Not Found"* ]]; then
     URL_SOURCE="None"
 fi
+
+# #
+#   Validate ipv4 / CIDR
+#
+#   @arg            str ipv4
+#   @usage          if process_v4 "${entry#*:}"; then
+# #
+
+process_v4() {
+    local ip_cidr="$1"
+
+    if [[ $ip_cidr =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$ ]]; then
+        IFS='/' read -r ip cidr <<< "$ip_cidr"
+        IFS='.' read -r a b c d <<< "$ip"
+        [[ $a -le 255 && $b -le 255 && $c -le 255 && $d -le 255 && (-z "$cidr" || ($cidr -ge 0 && $cidr -le 32)) ]]
+
+        return $?
+    fi
+
+    return 1
+}
+
+# #
+#   Validate ipv6 / CIDR
+#
+#   @arg            str ipv6
+#   @usage          if process_v6 "${entry#*:}"; then
+# #
+
+process_v6() {
+    local ip_cidr="$1"
+
+    # #
+    #   Remove square brackets (if present) for URL format.
+    # #
+
+    ip_cidr=${ip_cidr#[}
+    ip_cidr=${ip_cidr%]}
+
+    if [[ $ip_cidr =~ ^([0-9a-fA-F:]+)(/[0-9]{1,3})?$ ]]; then
+        IFS='/' read -r ip cidr <<< "$ip_cidr"
+
+        # #
+        #   Use grep to check if ip:port is valid
+        # #
+
+        if echo "$ip" | grep -qP '^(?:(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:(?:(:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'; then
+            [[ -z "$cidr" || ($cidr -ge 0 && $cidr -le 128) ]]
+            return $?
+        fi
+    fi
+
+    return 1
+}
+
+# #
+#   Parse > Extract SPF
+#
+#   @usage          parse_spf_record "${entry#*=}" ;;
+#                   parse_spf_record "_spf.domain.com" ;;
+# #
+
+parse_spf_record() {
+	declare -a dns_record
+
+	local fqdn=${1}
+    local fqdn_i=${#fqdn}
+
+    if [[ fqdn_i -lt 64 ]]; then
+        dns_record=( $( dig txt "${fqdn}" | grep -oE 'v=spf[0-9] [^"]+' ) )
+
+        for entry in ${dns_record[*]}; do
+                case ${entry} in
+                    a )
+                        dig +short "${fqdn}" >/dev/null 2>&1;;
+                    mx )
+                        parse_mx_record "${fqdn}" >/dev/null 2>&1 ;;
+                    ip4:* )
+                        if process_v4 "${entry#*:}"; then
+                            echo "${entry#*:}"
+                        fi ;;
+                    ip6:* )
+                        if process_v6 "${entry#*:}"; then
+                            echo "${entry#*:}"
+                        fi ;;
+                    redirect=* )
+                        parse_spf_record "${entry#*=}" ;;
+                    include:* )
+                        parse_spf_record "${entry#*:}" ;;
+                esac
+        done
+    fi
+}
+
+# #
+#   Parse > MX Record
+#
+#   @usage          parse_mx_record "${entry#*=}" ;;
+#                   parse_mx_record "_spf.domain.com" ;;
+# #
+
+parse_mx_record() {
+	declare -a mx_records
+
+	local fqdn=${1}
+	mx_records=($(dig +short mx "${fqdn}" | cut -d\  -f2 >/dev/null 2>&1))
+
+	for entry in ${mx_records[*]}; do
+		dig +short "${entry}" >/dev/null 2>&1
+	done
+}
+
+# #
+#   Sort Results
+#
+#   @usage          line=$(parse_spf_record "${ip}" | sort_results)
+# #
+
+sort_results(){
+	declare -a ipv4 ipv6
+
+	while read -r line ; do
+		if [[ ${line} =~ : ]] ; then
+			ipv6+=("${line}")
+		else
+			ipv4+=("${line}")
+		fi
+	done
+
+	[[ -v ipv4[@] ]] && printf '%s\n' "${ipv4[@]}" | sort -g -t. -k1,1 -k 2,2 -k 3,3 -k 4,4 | uniq
+	[[ -v ipv6[@] ]] && printf '%s\n' "${ipv6[@]}" | sort -g -t: -k1,1 -k 2,2 -k 3,3 -k 4,4 -k 5,5 -k 6,6 -k 7,7 -k 8,8 | uniq
+}
 
 # #
 #   Output > Header
@@ -150,10 +253,22 @@ fi
 echo -e "  🌎 Downloading IP blacklist to ${ARG_SAVEFILE}"
 
 # #
+#   Read stdin
+#
+#   each line from stdin gets read in the while loop
+#   add newline at end which then be moved over to our temp file
+# #
+
+while IFS= read -r ip || [[ -n "$ip" ]]; do
+    line=$(parse_spf_record "${ip}" | sort_results)
+    OUTPUT+="${line}"$'\n'
+done
+
+# #
 #   Get IP list
 # #
 
-OUTPUT=$(curl -sSL -A "${CURL_AGENT}" ${ARG_URL} | html2text | grep -v "^#" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${FILE_TEMP})
+list_ips=$(echo "${OUTPUT}" | grep -v "^#" | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${FILE_TEMP})
 sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${FILE_TEMP}                     # remove # and ; comments
 sed -i 's/\-.*//' ${FILE_TEMP}                                          # remove hyphens for ip ranges
 sed -i 's/[[:blank:]]*$//' ${FILE_TEMP}                                 # remove space / tab from EOL
