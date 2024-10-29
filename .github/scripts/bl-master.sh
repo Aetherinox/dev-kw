@@ -89,7 +89,7 @@ TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP
 TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/url-source/${TEMPL_ID}.txt")
 REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
 REGEX_ISNUM='^[0-9]+$'
-$(basename -- "$TEMPL_ID")
+
 # #
 #   Default Values
 # #
@@ -177,34 +177,34 @@ download_list()
     for line in $(cat ${tempFile}); do
         # is ipv6
         if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
-            COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`                           # GLOBAL count subnet
-            DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + 1`                     # LOCAL count subnet
+            COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP + 1 ))                           # GLOBAL count subnet
+            DL_COUNT_TOTAL_IP=$(( $DL_COUNT_TOTAL_IP + 1 ))                     # LOCAL count subnet
 
         # is subnet
         elif [[ $line =~ /[0-9]{1,2}$ ]]; then
             ips=$(( 1 << (32 - ${line#*/}) ))
 
             if [[ $ips =~ $REGEX_ISNUM ]]; then
-                CIDR=$(echo $line | sed 's:.*/::')
+                # CIDR=$(echo $line | sed 's:.*/::')
 
                 # uncomment if you want to count ONLY usable IP addresses
                 # subtract - 2 from any cidr not ending with 31 or 32
                 # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
-                    # COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP - 2`
-                    # DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP - 2`
+                    # COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP - 2 ))
+                    # DL_COUNT_TOTAL_IP=$(( $DL_COUNT_TOTAL_IP - 2 ))
                 # fi
 
-                COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`                    # GLOBAL count IPs in subnet
-                COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`               # GLOBAL count subnet
+                COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP + $ips ))                    # GLOBAL count IPs in subnet
+                COUNT_TOTAL_SUBNET=$(( $COUNT_TOTAL_SUBNET + 1 ))               # GLOBAL count subnet
 
-                DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + $ips`              # LOCAL count IPs in subnet
-                DL_COUNT_TOTAL_SUBNET=`expr $DL_COUNT_TOTAL_SUBNET + 1`         # LOCAL count subnet
+                DL_COUNT_TOTAL_IP=$(( $DL_COUNT_TOTAL_IP + $ips ))              # LOCAL count IPs in subnet
+                DL_COUNT_TOTAL_SUBNET=$(( $DL_COUNT_TOTAL_SUBNET + 1 ))         # LOCAL count subnet
             fi
 
         # is normal IP
         elif [[ $line =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`
-            DL_COUNT_TOTAL_IP=`expr $DL_COUNT_TOTAL_IP + 1`
+            COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP + 1 ))
+            DL_COUNT_TOTAL_IP=$(( $DL_COUNT_TOTAL_IP + 1 ))
         fi
     done
 
