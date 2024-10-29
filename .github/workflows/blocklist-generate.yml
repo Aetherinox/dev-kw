@@ -279,6 +279,19 @@ jobs:
                   eval "./$run_forums"
 
             # #
+            #   Generate > Geographical > Geolite2
+            #
+            #   only updated once per day (at 1am UTC)
+            # #
+
+            - name: "🧱 Geographical › GeoLite2 (1/day)"
+              id: task_blocklist_geographical_generate_geolite2
+              run: |
+                  chmod +x ".github/scripts/bl-geolite2.sh"
+                  run_geolite=".github/scripts/bl-geolite2.sh -p ${{ secrets.API_GEOLITE2_KEY }}"
+                  eval "./$run_geolite"
+
+            # #
             #   Generate  > Artifact > Upload
             # #
 

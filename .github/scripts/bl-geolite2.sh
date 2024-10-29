@@ -30,7 +30,7 @@ APP_CFG_FILE="aetherx.conf"                                         # Optional c
 APP_TARGET_DIR="blocklists/country/geolite"                         # path to save ipsets
 APP_TARGET_EXT_TMP="tmp"                                            # extension for ipsets
 APP_TARGET_EXT_PROD="ipset"
-APP_SOURCE_LOCAL_ENABLED=true                                       # True = loads from ./local, False = download from MaxMind
+APP_SOURCE_LOCAL_ENABLED=false                                      # True = loads from ./local, False = download from MaxMind
 APP_SOURCE_LOCAL="local"                                            # where to fetch local csv from if local mode enabled
 APP_DIR_IPV4="./${APP_TARGET_DIR}/ipv4"                             # folder to store ipv4
 APP_DIR_IPV6="./${APP_TARGET_DIR}/ipv6"                             # folder to store ipv6
@@ -743,8 +743,8 @@ function DB_DOWNLOAD()
     # #
 
     echo -e "  🌎 Downloading file ${APP_GEO_ZIP}"
-    curl --silent --location --output -A "${APP_CURL_AGENT}" $APP_GEO_ZIP "$URL_CSV" || error "Failed to curl file: ${URL_CSV}"
-    curl --silent --location --output -A "${APP_CURL_AGENT}" $FILE_MD5 "$URL_MD5" || error "Failed to curl file: ${URL_MD5}"
+    curl --silent --location --output $APP_GEO_ZIP "$URL_CSV" || error "Failed to curl file: ${URL_CSV}"
+    curl --silent --location --output $FILE_MD5 "$URL_MD5" || error "Failed to curl file: ${URL_MD5}"
 
     # #
     #   validate checksum
@@ -926,6 +926,10 @@ function GENERATE_IPv6
 
 function MERGE_IPSETS()
 {
+
+    echo -e
+    echo -e "  🚛 Start Merge"
+
     for fullpath_ipv6 in ${APP_DIR_IPV6}/*.${APP_TARGET_EXT_TMP}; do
         file_ipv6=$(basename ${fullpath_ipv6})
 
@@ -959,13 +963,13 @@ function STRUCTURIZE()
 function GARBAGE()
 {
     if [ -d $APP_DIR_IPV4 ]; then
-        echo -e "  🗑️ Cleanup ${APP_DIR_IPV4}"
+        echo -e "  🗑️  Cleanup ${APP_DIR_IPV4}"
         rm -rf ${APP_DIR_IPV4}
     fi
 
     if [ -d $APP_DIR_IPV6 ]; then
-        echo -e "  🗑️ Cleanup ${APP_DIR_IPV6}"
-        rm -rf ${APP_DIR_IPV6}
+        echo -e "  🗑️  Cleanup ${APP_DIR_IPV6}"
+       rm -rf ${APP_DIR_IPV6}
     fi
 }
 
@@ -975,6 +979,9 @@ function GARBAGE()
 
 function GENERATE_HEADERS()
 {
+
+    echo -e
+    echo -e "  🏷️ Generate Headers"
 
     # #
     #   Loop each temp file
@@ -1129,10 +1136,14 @@ END_ED
     #   Count lines and subnets
     # #
 
-    COUNT_LINES=$(wc -l < ${APP_FILE_TEMP})                                             # GLOBAL count ip lines
-    COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                                          # GLOBAL add commas to thousands
     COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")                                    # GLOBAL add commas to thousands
     COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                            # GLOBAL add commas to thousands
+
+    # #
+    #   Run garbge cleanup
+    # #
+
+    GARBAGE
 
     # #
     #   Finished
@@ -1229,6 +1240,8 @@ function main()
     #   Cleanup old files
     # #
 
+    rm -rf $APP_TARGET_DIR/*
+
     rm -rf $APP_DIR_IPV4
     mkdir --parent $APP_DIR_IPV4
 
@@ -1243,7 +1256,6 @@ function main()
     GENERATE_IPv6
     MERGE_IPSETS
     GENERATE_HEADERS
-    GARBAGE
 }
 
 main "$@"
