@@ -16,7 +16,7 @@
 #                                               It only grabs ipv4 and ipv6 addresses.
 #
 #   @terminal           .github/scripts/bl-html.sh \
-#                           02_privacy_yandex.ipset \
+#                           blocklists/02_privacy_yandex.ipset \
 #                           https://udger.com/resources/ua-list/bot-detail?bot=YandexBot
 #
 #   @workflow           # Privacy › Yandex
@@ -80,7 +80,8 @@ COUNT_LINES=0                                           # number of lines in doc
 COUNT_TOTAL_SUBNET=0                                    # number of IPs in all subnets combined
 COUNT_TOTAL_IP=0                                        # number of single IPs (counts each line)
 TEMPL_NOW=`date -u`                                     # get current date in utc format
-TEMPL_ID="${APP_FILE_PERM//[^[:alnum:]]/_}"             # ipset id, /description/* and /category/* files must match this value
+TEMPL_ID=$(basename -- ${APP_FILE_PERM})                # ipset id, get base filename
+TEMPL_ID="${TEMPL_ID//[^[:alnum:]]/_}"                  # ipset id, only allow alphanum and underscore, /description/* and /category/* files must match this value
 TEMPL_UUID=$(uuidgen -m -N "${TEMPL_ID}" -n @url)       # uuid associated to each release
 APP_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
 TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/descriptions/${TEMPL_ID}.txt")
@@ -120,6 +121,7 @@ echo -e "  Blocklist -  ${APP_FILE_PERM}"
 echo -e "  ID:          ${TEMPL_ID}"
 echo -e "  UUID:        ${TEMPL_UUID}"
 echo -e "  CATEGORY:    ${TEMPL_CAT}"
+echo -e "  ACTION:      ${APP_FILE}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 
 # #

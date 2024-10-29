@@ -14,7 +14,8 @@
 #                           bl_htm              Supports multiple URLs, but doesn't allow you to specify a custom grep rule.
 #                                               It only grabs ipv4 and ipv6 addresses.
 #
-#   @terminal           .github/scripts/bl-htmlip.sh 01_highrisk.ipset \
+#   @terminal           .github/scripts/bl-htmlip.sh blocklists/ \
+#                           01_highrisk.ipset \
 #                           https://www.maxmind.com/en/high-risk-ip-sample-list \
 #                           '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'
 #
@@ -28,7 +29,7 @@
 #                           <URL_2>
 #                           {...}
 #
-#                       bl-htmlip.sh 01_highrisk.ipset https://maxmind.com/en/high-risk-ip-sample-list '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'
+#                       bl-htmlip.sh blocklists/01_highrisk.ipset https://maxmind.com/en/high-risk-ip-sample-list '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'
 #
 #                       📁 .github
 #                           📁 scripts
@@ -83,7 +84,8 @@ COUNT_TOTAL_IP=0                                        # number of single IPs (
 BLOCKS_COUNT_TOTAL_IP=0                                 # number of ips for one particular file
 BLOCKS_COUNT_TOTAL_SUBNET=0                             # number of subnets for one particular file
 TEMPL_NOW=`date -u`                                     # get current date in utc format
-TEMPL_ID="${APP_FILE_PERM//[^[:alnum:]]/_}"             # ipset id, /description/* and /category/* files must match this value
+TEMPL_ID=$(basename -- ${APP_FILE_PERM})                # ipset id, get base filename
+TEMPL_ID="${TEMPL_ID//[^[:alnum:]]/_}"                  # ipset id, only allow alphanum and underscore, /description/* and /category/* files must match this value
 TEMPL_UUID=$(uuidgen -m -N "${TEMPL_ID}" -n @url)       # uuid associated to each release
 APP_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
 TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/descriptions/${TEMPL_ID}.txt")
@@ -123,6 +125,7 @@ echo -e "  Blocklist -  ${APP_FILE_PERM}"
 echo -e "  ID:          ${TEMPL_ID}"
 echo -e "  UUID:        ${TEMPL_UUID}"
 echo -e "  CATEGORY:    ${TEMPL_CAT}"
+echo -e "  ACTION:      ${APP_FILE}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 
 # #
@@ -176,38 +179,38 @@ for line in $(cat ${APP_FILE_TEMP}); do
     # is ipv6
     if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
         if [[ $line =~ /[0-9]{1,3}$ ]]; then
-            COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`                       # GLOBAL count subnet
-            BLOCKS_COUNT_TOTAL_SUBNET=`expr $BLOCKS_COUNT_TOTAL_SUBNET + 1`         # LOCAL count subnet
+            COUNT_TOTAL_SUBNET=$(( $COUNT_TOTAL_SUBNET + 1 ))                       # GLOBAL count subnet
+            BLOCKS_COUNT_TOTAL_SUBNET=$(( $BLOCKS_COUNT_TOTAL_SUBNET + 1 ))         # LOCAL count subnet
         else
-            COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`                               # GLOBAL count ip
-            BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + 1`                 # LOCAL count ip
-        fi;
+            COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP + 1 ))                               # GLOBAL count ip
+            BLOCKS_COUNT_TOTAL_IP=$(( $BLOCKS_COUNT_TOTAL_IP + 1 ))                 # LOCAL count ip
+        fi
 
     # is subnet
     elif [[ $line =~ /[0-9]{1,2}$ ]]; then
         ips=$(( 1 << (32 - ${line#*/}) ))
 
         if [[ $ips =~ $REGEX_ISNUM ]]; then
-            CIDR=$(echo $line | sed 's:.*/::')
+            # CIDR=$(echo $line | sed 's:.*/::')
 
             # uncomment if you want to count ONLY usable IP addresses
             # subtract - 2 from any cidr not ending with 31 or 32
             # if [[ $CIDR != "31" ]] && [[ $CIDR != "32" ]]; then
-                # BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP - 2`
-                # COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP - 2`
+                # BLOCKS_COUNT_TOTAL_IP=$(( $BLOCKS_COUNT_TOTAL_IP - 2 ))
+                # COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP - 2 ))
             # fi
 
-            BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + $ips`              # LOCAL count IPs in subnet
-            BLOCKS_COUNT_TOTAL_SUBNET=`expr $BLOCKS_COUNT_TOTAL_SUBNET + 1`         # LOCAL count subnet
+            BLOCKS_COUNT_TOTAL_IP=$(( $BLOCKS_COUNT_TOTAL_IP + $ips ))              # LOCAL count IPs in subnet
+            BLOCKS_COUNT_TOTAL_SUBNET=$(( $BLOCKS_COUNT_TOTAL_SUBNET + 1 ))         # LOCAL count subnet
 
-            COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + $ips`                            # GLOBAL count IPs in subnet
-            COUNT_TOTAL_SUBNET=`expr $COUNT_TOTAL_SUBNET + 1`                       # GLOBAL count subnet
+            COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP + $ips ))                            # GLOBAL count IPs in subnet
+            COUNT_TOTAL_SUBNET=$(( $COUNT_TOTAL_SUBNET + 1 ))                       # GLOBAL count subnet
         fi
 
     # is normal IP
     elif [[ $line =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        BLOCKS_COUNT_TOTAL_IP=`expr $BLOCKS_COUNT_TOTAL_IP + 1`
-        COUNT_TOTAL_IP=`expr $COUNT_TOTAL_IP + 1`
+        BLOCKS_COUNT_TOTAL_IP=$(( $BLOCKS_COUNT_TOTAL_IP + 1 ))
+        COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP + 1 ))
     fi
 done
 
@@ -228,7 +231,6 @@ cat ${APP_FILE_TEMP} >> ${APP_FILE_PERM}                                        
 rm ${APP_FILE_TEMP}                                                                 # delete temp file
 
 echo -e "  ➕ Added ${BLOCKS_COUNT_TOTAL_IP} IPs and ${BLOCKS_COUNT_TOTAL_SUBNET} Subnets to ${APP_FILE_TEMP}"
-echo -e
 
 # #
 #   ed
