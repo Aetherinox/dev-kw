@@ -143,6 +143,7 @@ jobs:
                   chmod +x ".github/scripts/bl-json.sh"
                   chmod +x ".github/scripts/bl-plain.sh"
                   chmod +x ".github/scripts/bl-spf.sh"
+                  chmod +x ".github/scripts/bt-transmission.sh"
 
             # #
             #   Generate > Set Env Variables
@@ -290,6 +291,16 @@ jobs:
                   chmod +x ".github/scripts/bl-geolite2.sh"
                   run_geolite=".github/scripts/bl-geolite2.sh -p ${{ secrets.API_GEOLITE2_KEY }}"
                   eval "./$run_geolite"
+
+            # #
+            #   Generate > Transmission
+            # #
+
+            - name: "🧱 Generate › Transmission"
+              id: task_blocklist_generate_transmission
+              run: |
+                  run_bt=".github/scripts/bt-transmission.sh"
+                  eval "./$run_bt"
 
             # #
             #   Generate  > Artifact > Upload
