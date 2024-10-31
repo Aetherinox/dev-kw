@@ -31,38 +31,6 @@
 # #
 
 # #
-#    Define > General
-# #
-
-SECONDS=0                                               # set seconds count for beginning of script
-APP_VER=("1" "0" "0" "0")                               # current script version
-APP_DEBUG=false                                         # debug mode
-APP_REPO="Aetherinox/blocklists"                        # repository
-APP_REPO_BRANCH="main"                                  # repository branch
-APP_THIS_FILE=$(basename "$0")                          # current script file
-APP_THIS_DIR="${PWD}"                                   # Current script directory
-APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
-APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
-COUNT_LINES=0                                           # number of lines in doc
-COUNT_TOTAL_SUBNET=0                                    # number of IPs in all subnets combined
-COUNT_TOTAL_IP=0                                        # number of single IPs (counts each line)
-BLOCKS_COUNT_TOTAL_IP=0                                 # number of ips for one particular file
-BLOCKS_COUNT_TOTAL_SUBNET=0                             # number of subnets for one particular file
-APP_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) "\
-"AppleWebKit/537.36 (KHTML, like Gecko) "\
-"Chrome/51.0.2704.103 Safari/537.36"                    # user agent used with curl
-TEMPL_NOW=`date -u`                                     # get current date in utc format
-TEMPL_ID=$(basename -- ${APP_FILE_PERM})                # ipset id, get base filename
-TEMPL_ID="${TEMPL_ID//[^[:alnum:]]/_}"                  # ipset id, only allow alphanum and underscore, /description/* and /category/* files must match this value
-TEMPL_UUID=$(uuidgen -m -N "${TEMPL_ID}" -n @url)       # uuid associated to each release
-TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/descriptions/${TEMPL_ID}.txt")
-TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/categories/${TEMPL_ID}.txt")
-TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/expires/${TEMPL_ID}.txt")
-TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/url-source/${TEMPL_ID}.txt")
-REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
-REGEX_ISNUM='^[0-9]+$'
-
-# #
 #   vars > colors
 #
 #   Use the color table at:
@@ -128,6 +96,38 @@ if [[ -z "${ARG_BLOCKS_CAT}" ]]; then
 fi
 
 # #
+#    Define > General
+# #
+
+SECONDS=0                                               # set seconds count for beginning of script
+APP_VER=("1" "0" "0" "0")                               # current script version
+APP_DEBUG=false                                         # debug mode
+APP_REPO="Aetherinox/blocklists"                        # repository
+APP_REPO_BRANCH="main"                                  # repository branch
+APP_THIS_FILE=$(basename "$0")                          # current script file
+APP_THIS_DIR="${PWD}"                                   # Current script directory
+APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
+APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
+COUNT_LINES=0                                           # number of lines in doc
+COUNT_TOTAL_SUBNET=0                                    # number of IPs in all subnets combined
+COUNT_TOTAL_IP=0                                        # number of single IPs (counts each line)
+BLOCKS_COUNT_TOTAL_IP=0                                 # number of ips for one particular file
+BLOCKS_COUNT_TOTAL_SUBNET=0                             # number of subnets for one particular file
+APP_AGENT="Mozilla/5.0 (Windows NT 10.0; WOW64) "\
+"AppleWebKit/537.36 (KHTML, like Gecko) "\
+"Chrome/51.0.2704.103 Safari/537.36"                    # user agent used with curl
+TEMPL_NOW=`date -u`                                     # get current date in utc format
+TEMPL_ID=$(basename -- ${APP_FILE_PERM})                # ipset id, get base filename
+TEMPL_ID="${TEMPL_ID//[^[:alnum:]]/_}"                  # ipset id, only allow alphanum and underscore, /description/* and /category/* files must match this value
+TEMPL_UUID=$(uuidgen -m -N "${TEMPL_ID}" -n @url)       # uuid associated to each release
+TEMPL_DESC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/descriptions/${TEMPL_ID}.txt")
+TEMPL_CAT=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/categories/${TEMPL_ID}.txt")
+TEMPL_EXP=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/expires/${TEMPL_ID}.txt")
+TEMP_URL_SRC=$(curl -sSL -A "${APP_AGENT}" "https://raw.githubusercontent.com/${APP_REPO}/${APP_REPO_BRANCH}/.github/url-source/${TEMPL_ID}.txt")
+REGEX_URL='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
+REGEX_ISNUM='^[0-9]+$'
+
+# #
 #   Default Values
 # #
 
@@ -153,11 +153,12 @@ fi
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-echo -e "  Blocklist -  ${APP_FILE_PERM} (${ARG_BLOCKS_CAT})"
-echo -e "  ID:          ${TEMPL_ID}"
-echo -e "  UUID:        ${TEMPL_UUID}"
-echo -e "  CATEGORY:    ${TEMPL_CAT}"
-echo -e "  ACTION:      ${APP_FILE}"
+echo -e "  ${YELLOW1}${APP_FILE_PERM} (${ARG_BLOCKS_CAT})${RESET}"
+echo -e
+echo -e "  ${GREY2}ID:          ${TEMPL_ID}${RESET}"
+echo -e "  ${GREY2}UUID:        ${TEMPL_UUID}${RESET}"
+echo -e "  ${GREY2}CATEGORY:    ${TEMPL_CAT}${RESET}"
+echo -e "  ${GREY2}ACTION:      ${APP_THIS_FILE}${RESET}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 
 # #
@@ -172,11 +173,11 @@ echo -e "  ⭐ Starting"
 # #
 
 if [ -f $APP_FILE_PERM ]; then
-    echo -e "  📄 Clean ${APP_FILE_PERM}"
+    echo -e "  📄 Clean ${BLUE2}${APP_FILE_PERM}${RESET}"
     echo -e
    > ${APP_FILE_PERM}       # clean file
 else
-    echo -e "  📁 Create ${APP_FILE_PERM}"
+    echo -e "  📁 Create ${BLUE2}${APP_FILE_PERM}${RESET}"
     echo -e
     mkdir -p $(dirname "${APP_FILE_PERM}")
     touch ${APP_FILE_PERM}
@@ -188,7 +189,7 @@ fi
 
 if [ -d .github/blocks/ ]; then
 	for APP_FILE_TEMP in .github/blocks/${ARG_BLOCKS_CAT}/*.ipset; do
-		echo -e "  📒 Adding static file ${APP_FILE_TEMP}"
+		echo -e "  📒 Reading static block ${ORANGE2}${APP_FILE_TEMP}${RESET}"
 
         # #
         #   calculate how many IPs are in a subnet
@@ -253,10 +254,10 @@ if [ -d .github/blocks/ ]; then
         BLOCKS_COUNT_TOTAL_IP=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_IP")                      # LOCAL add commas to thousands
         BLOCKS_COUNT_TOTAL_SUBNET=$(printf "%'d" "$BLOCKS_COUNT_TOTAL_SUBNET")              # LOCAL add commas to thousands
 
-        echo -e "  🚛 Move ${APP_FILE_TEMP} to ${APP_FILE_PERM}"
+        echo -e "  🚛 Copy static block rules from ${ORANGE2}${APP_FILE_TEMP}${RESET} to ${BLUE2}${APP_FILE_PERM}${RESET}"
         cat ${APP_FILE_TEMP} >> ${APP_FILE_PERM}                                            # copy .tmp contents to real file
 
-        echo -e "  ➕ Added ${BLOCKS_COUNT_TOTAL_IP} IPs and ${BLOCKS_COUNT_TOTAL_SUBNET} Subnets to ${APP_FILE_TEMP}"
+        echo -e "  ➕ Added ${FUCHSIA2}${BLOCKS_COUNT_TOTAL_IP} IPs${RESET} and ${FUCHSIA2}${BLOCKS_COUNT_TOTAL_SUBNET} Subnets${RESET} to ${BLUE2}${APP_FILE_PERM}${RESET}"
         echo -e
 	done
 fi
@@ -314,7 +315,7 @@ M=$((T/60%60))
 S=$((T%60))
 
 echo -e
-echo -e "  🎌  ${GREY2}Finished! ${YELLOW2}${D} days ${H} hrs ${M} mins ${S} secs${RESET}"
+echo -e "  🎌 ${GREY2}Finished! ${YELLOW2}${D} days ${H} hrs ${M} mins ${S} secs${RESET}"
 
 # #
 #   Output
@@ -322,7 +323,7 @@ echo -e "  🎌  ${GREY2}Finished! ${YELLOW2}${D} days ${H} hrs ${M} mins ${S} s
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-printf "%-25s | %-30s\n" "  #️⃣  ${APP_FILE_PERM}" "${COUNT_TOTAL_IP} IPs, ${COUNT_TOTAL_SUBNET} Subnets"
+echo -e "  #️⃣  ${BLUE2}${APP_FILE_PERM}${RESET} | Added ${FUCHSIA2}${COUNT_TOTAL_IP} IPs${RESET} and ${FUCHSIA2}${COUNT_TOTAL_SUBNET} Subnets${RESET}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 echo -e
 echo -e
