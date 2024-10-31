@@ -144,6 +144,7 @@ jobs:
                   chmod +x ".github/scripts/bl-plain.sh"
                   chmod +x ".github/scripts/bl-spf.sh"
                   chmod +x ".github/scripts/bt-transmission.sh"
+                  chmod +x ".github/scripts/update-readme.sh"
 
             # #
             #   Generate > Set Env Variables
@@ -353,11 +354,22 @@ jobs:
             - name: "📦 Commit › Pre-commit"
               id: task_commit_pre
               run: |
-                  now=$(date '+%m/%d/%Y %H:%M')
+                  now=$(date -u '+%m/%d/%Y %H:%M')
                   commit_label="Sync" >> $GITHUB_ENV
-                  commit_message="\`️️🔒 $commit_label 🔒\` \`$now\`" >> $GITHUB_ENV
+                  commit_message="\`️️🔒 $commit_label 🔒\` \`$now\ UTC`" >> $GITHUB_ENV
                   echo "COMMIT_MESSAGE=$(echo $commit_message)" >> $GITHUB_ENV
                   echo "NOW=$(echo $now)" >> $GITHUB_ENV
+
+            # #
+            #   Update README
+            # #
+
+            - name: "📄 Update README"
+              id: task_commit_readme_update
+              run: |
+                  chmod +x ".github/scripts/update-readme.sh"
+                  run_readme=".github/scripts/update-readme.sh"
+                  eval "./$run_readme"
 
             # #
             #   GPG Key
