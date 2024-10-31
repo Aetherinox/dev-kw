@@ -176,7 +176,7 @@ echo -e " ───────────────────────�
 # #
 
 echo -e
-echo -e "  ⭐ Starting"
+echo -e "  ⭐ Starting script ${GREEN1}${APP_THIS_FILE}${RESET}"
 
 # #
 #   Create or Clean file
@@ -273,7 +273,7 @@ echo -e "  🚛 Move ${ORANGE2}${APP_FILE_TEMP}${RESET} to ${BLUE2}${APP_FILE_PE
 cat ${APP_FILE_TEMP} >> ${APP_FILE_PERM}                                            # copy .tmp contents to real file
 rm ${APP_FILE_TEMP}                                                                 # delete temp file
 
-echo -e "  ➕ Added ${FUCHSIA2}${BLOCKS_COUNT_TOTAL_IP} IPs${RESET} and ${FUCHSIA2}${BLOCKS_COUNT_TOTAL_SUBNET} Subnets${RESET} to ${ORANGE2}${APP_FILE_TEMP}${RESET}"
+echo -e "  ➕ Added ${FUCHSIA2}${BLOCKS_COUNT_TOTAL_IP} IPs${RESET} and ${FUCHSIA2}${BLOCKS_COUNT_TOTAL_SUBNET} Subnets${RESET} to ${BLUE2}${APP_FILE_PERM}${RESET}"
 
 # #
 #   ed
