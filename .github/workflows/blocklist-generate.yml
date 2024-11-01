@@ -127,10 +127,19 @@ jobs:
                 fetch-depth: 0
 
             # #
-            #   Generate > Checkout
+            #   Generate > Configure
+            #
+            #   this step installs packages we need to manage ipsets.
+            #       - iprange
+            #         this package allows us to convert ip ranges into a CIDR formatted ip
+            #         10.10.0.1-10.10.0.9  =>   10.10.0.1
+            #                                   10.10.0.2/31
+            #                                   10.10.0.4/30
+            #                                   10.10.0.8/31
+            #       https://github.com/firehol/iprange
             # #
 
-            - name: "☑️ Configure"
+            - name: "⚙️ Configure"
               id: task_blocklist_generate_configure
               run: |
                   git clone https://github.com/firehol/iprange.git ./iprange
@@ -138,7 +147,6 @@ jobs:
                   ./autogen.sh
                   ./configure --disable-man
                   sudo make && make install
-                  iprange --help 2>&1
 
             # #
             #   Generate > Set Template Permissions
@@ -167,7 +175,7 @@ jobs:
             - name: "📦 Set Env Variables"
               id: task_commit_pre
               run: |
-                  useragent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
+                  useragent="${{ vars.API_USERAGENT }}"
                   echo "USERAGENT=$(echo $useragent)" >> $GITHUB_ENV
 
             # #
