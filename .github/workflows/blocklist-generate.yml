@@ -135,7 +135,7 @@ jobs:
               run:
                   git clone https://github.com/firehol/iprange.git ./iprange
                   cd iprange
-                  ./configure --disable-man
+                  ./configure
                   sudo make && make install
                   iprange --help 2>&1
 
