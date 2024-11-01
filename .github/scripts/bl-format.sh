@@ -224,7 +224,7 @@ fi
 #   Get IP list
 # #
 
-echo -e "  🌎 Downloading IP blacklist to ${BLUE2}${APP_FILE_PERM}${RESET}"
+echo -e "  🌎 Downloading IP blacklist to ${ORANGE1}${APP_FILE_TEMP}${RESET}"
 
 # #
 #   Read stdin

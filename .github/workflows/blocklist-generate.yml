@@ -368,7 +368,7 @@ jobs:
               id: task_commit_readme_update
               run: |
                   chmod +x ".github/scripts/update-readme.sh"
-                  run_readme=".github/scripts/update-readme.sh"
+                  run_readme=".github/scripts/update-readme.sh README.md"
                   eval "./$run_readme"
 
             # #
