@@ -1,34 +1,46 @@
 #!/bin/bash
 
 # #
-#   @for                https://github.com/Aetherinox/csf-firewall
-#   @workflow           blocklist-generate.yml
-#   @type               bash script
-#   @summary            generate ipset from json formatted web url. requires url and jq query | URLs: SINGLE
-#                       uses a URL to fetch JSON from a website, then formats that JSON so that there is one IP per line.
-#   
-#   @terminal           .github/scripts/bl-json.sh \
-#                           blocklists/02_privacy_google.ipset
-#                           https://developers.google.com/search/apis/ipranges/googlebot.json \
-#                           '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'
+#   script to take ip ranges, clean them up, and pass them on to ipcalc.
+#   Need to create our own in-house script to do the conversion, ipcalc has massive overhead times.
 #
-#   @workflow           # Privacy › Google
-#                       chmod +x ".github/scripts/bl-json.sh"
-#                       run_google=".github/scripts/bl-json.sh 02_privacy_google.ipset https://developers.google.com/search/apis/ipranges/googlebot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
-#                       eval "./$run_google"
+#   this repository has created two versions for this scenario:
+#       - tool-range-ipcalc.sh
+#       - tool-range.iprange.sh
 #
-#   @command            bl-json.sh
+#   it is preferred to use the `iprange.sh` script. the ipcalc version is a backup, and is slower.
+#   however, iprange requires a custom package to be built and installed.
+#
+#   [ INSTALL ]
+#
+#   to install this `tool-range-iprange.sh` version, run the following commands within the server:
+#
+#       sudo apt-get install -y autoconf
+#       git clone https://github.com/firehol/iprange.git ./iprange
+#       cd iprange/
+#       ./autogen.sh
+#       ./configure --disable-man
+#       sudo make && make install
+#
+#   @terminal           .github/scripts/tool-range-iprange.sh \
+#                           blocklists/02_privacy_blizzard.ipset \
+#                           http://list.iblocklist.com/?list=ercbntshuthyykfkmhxc \
+#                           "at&t"
+#
+#                       .github/scripts/tool-range-iprange.sh \
+#                           blocklists/02_privacy_blizzard.ipset \
+#                           list.txt \
+#                           "at&t"
+#
+#   @workflow           chmod +x ".github/scripts/tool-range-iprange.sh"
+#                       run_blizzard=".github/scripts/tool-range-iprange.sh blocklists/02_privacy_blizzard.ipset http://list.iblocklist.com/?list=ercbntshuthyykfkmhxc 'at&t'"
+#                       eval "./$run_blizzard"
+#
+#   @command            bl-html.sh
 #                           <ARG_SAVEFILE>
-#                           <ARG_JSON_URL>
-#                           <ARG_JSON_QRY>
-#                       bl-json.sh 02_privacy_google.ipset https://api.domain.lan/googlebot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'
-#
-#                       📁 .github
-#                           📁 scripts
-#                               📄 bl-json.sh
-#                           📁 workflows
-#                               📄 blocklist-generate.yml
-#
+#                           <URL_1>
+#                           <URL_2>
+#                           {...}
 # #
 
 APP_THIS_FILE=$(basename "$0")                          # current script file
@@ -87,16 +99,27 @@ function error()
 #   This bash script has the following arguments:
 #
 #       ARG_SAVEFILE        (str)       file to save IP addresses into
-#       ARG_JSON_URL        (str)       direct url to json file to download
-#       ARG_JSON_QRY        (str)       jq rules which pull the needed ip addresses
+#       ARG_SOURCEFILE      (str)       file containing list of ip ranges
+#                                       accepts either a local file OR a URL.
+#       ARG_GREP_FILTER     (str)       grep filter to exclude certain words
 # #
 
 ARG_SAVEFILE=$1
-ARG_JSON_URL=$2
-ARG_JSON_QRY=$3
+ARG_SOURCEFILE=$2
+ARG_GREP_FILTER=$3
 
 # #
-#   Arguments > Validate
+#   Grep search pattern not provided, ignore comments and blank lines.
+#   this is already done in the step before this grep exclude pattern is ran, but
+#   we need a default grep pattern if one is not provided.
+# #
+
+if [[ -z "${ARG_GREP_FILTER}" ]]; then
+    ARG_GREP_FILTER="^#|^;|^$"
+fi
+
+# #
+#   Validation checks
 # #
 
 if [[ -z "${ARG_SAVEFILE}" ]]; then
@@ -106,16 +129,13 @@ if [[ -z "${ARG_SAVEFILE}" ]]; then
     exit 0
 fi
 
-if [[ -z "${ARG_JSON_URL}" ]] || [[ ! $ARG_JSON_URL =~ $REGEX_URL ]]; then
-    echo -e "  ⭕ ${YELLOW1}[${APP_THIS_FILE}]${RESET}: Invalid URL specified for ${YELLOW1}${ARG_SAVEFILE}${RESET}"
-    echo -e
-    exit 1
-fi
+# http://list.iblocklist.com/?list=ercbntshuthyykfkmhxc
 
-if [[ -z "${ARG_JSON_QRY}" ]]; then
-    echo -e "  ⭕ ${YELLOW1}[${APP_THIS_FILE}]${RESET}: No valid jq query specified for ${YELLOW1}${ARG_SAVEFILE}${RESET}"
+if [[ -z "${ARG_SOURCEFILE}" ]]; then
     echo -e
-    exit 1
+    echo -e "  ⭕ ${YELLOW1}[${APP_THIS_FILE}]${RESET}: No source file provided -- must specify a file containing a list of ip ranges to convert"
+    echo -e
+    exit 0
 fi
 
 # #
@@ -127,8 +147,8 @@ APP_VER=("1" "0" "0" "0")                               # current script version
 APP_DEBUG=false                                         # debug mode
 APP_REPO="Aetherinox/blocklists"                        # repository
 APP_REPO_BRANCH="main"                                  # repository branch
-APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
 APP_FILE_TEMP="${ARG_SAVEFILE}.tmp"                     # temp file when building ipset list
+APP_FILE_SRC="${ARG_SAVEFILE}.src"                      # temp file when building ipset list
 APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
 COUNT_LINES=0                                           # number of lines in doc
 COUNT_TOTAL_SUBNET=0                                    # number of IPs in all subnets combined
@@ -170,20 +190,6 @@ if [[ "$TEMP_URL_SRC" == *"404: Not Found"* ]]; then
 fi
 
 # #
-#   Output > Header
-# #
-
-echo -e
-echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-echo -e "  ${YELLOW1}${APP_FILE_PERM}${RESET}"
-echo -e
-echo -e "  ${GREY2}ID:          ${TEMPL_ID}${RESET}"
-echo -e "  ${GREY2}UUID:        ${TEMPL_UUID}${RESET}"
-echo -e "  ${GREY2}CATEGORY:    ${TEMPL_CAT}${RESET}"
-echo -e "  ${GREY2}ACTION:      ${APP_THIS_FILE}${RESET}"
-echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-
-# #
 #   output
 # #
 
@@ -206,16 +212,25 @@ else
 fi
 
 # #
-#   Get IP list
+#   Source is URL
 # #
 
-echo -e "  🌎 Downloading IP blacklist to ${ORANGE1}${APP_FILE_TEMP}${RESET}"
+if  [[ $ARG_SOURCEFILE =~ $REGEX_URL ]]; then
+    wget -q "${ARG_SOURCEFILE}" -O "${ARG_SAVEFILE}.gz"
+    ARG_SOURCEFILE=$(zcat "${ARG_SAVEFILE}.gz")
+    ipAddr=$(echo "$ARG_SOURCEFILE" | grep -v "^#|^;|^$" | awk '{if (++dup[$0] == 1) print $0;}' | grep -vi "${ARG_GREP_FILTER}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\s*-\s*[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | iprange | sort -n > ${APP_FILE_TEMP})
+
+    rm "${ARG_SAVEFILE}.gz"
+else
+    ipAddr=$(cat "$ARG_SOURCEFILE" | grep -v "^#|^;|^$" | awk '{if (++dup[$0] == 1) print $0;}' | grep -vi "${ARG_GREP_FILTER}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\s*-\s*[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | iprange | sort -n > ${APP_FILE_TEMP})
+fi
 
 # #
-#   Get IP list
+#   ip ranges converted to CIDR notation
+#
+#   in case our source file is not clean, run the file through grep first and get only the ip ranges.
 # #
 
-jsonOutput=$(curl -sSL -A "${APP_AGENT}" ${ARG_JSON_URL} | jq -r "${ARG_JSON_QRY}" | grep -v "^#" | sort -n | awk '{if (++dup[$0] == 1) print $0;}' > ${APP_FILE_TEMP})
 sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${APP_FILE_TEMP}                 # remove # and ; comments
 sed -i 's/\-.*//' ${APP_FILE_TEMP}                                      # remove hyphens for ip ranges
 sed -i 's/[[:blank:]]*$//' ${APP_FILE_TEMP}                             # remove space / tab from EOL
@@ -229,17 +244,18 @@ sed -i '/^\s*$/d' ${APP_FILE_TEMP}                                      # remove
 #   so we will count every IP in the block.
 # #
 
+echo -e "  📊 Fetching statistics for clean file ${ORANGE2}${APP_FILE_TEMP}${RESET}"
 for line in $(cat ${APP_FILE_TEMP}); do
 
     # is ipv6
     if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
-        if [[ $line =~ /[0-9]{1,3}$ ]]; then
-            COUNT_TOTAL_SUBNET=$(( $COUNT_TOTAL_SUBNET + 1 ))                       # GLOBAL count subnet
-            BLOCKS_COUNT_TOTAL_SUBNET=$(( $BLOCKS_COUNT_TOTAL_SUBNET + 1 ))         # LOCAL count subnet
-        else
-            COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP + 1 ))                               # GLOBAL count ip
-            BLOCKS_COUNT_TOTAL_IP=$(( $BLOCKS_COUNT_TOTAL_IP + 1 ))                 # LOCAL count ip
-        fi
+    if [[ $line =~ /[0-9]{1,3}$ ]]; then
+        COUNT_TOTAL_SUBNET=$(( $COUNT_TOTAL_SUBNET + 1 ))                       # GLOBAL count subnet
+        BLOCKS_COUNT_TOTAL_SUBNET=$(( $BLOCKS_COUNT_TOTAL_SUBNET + 1 ))         # LOCAL count subnet
+    else
+        COUNT_TOTAL_IP=$(( $COUNT_TOTAL_IP + 1 ))                               # GLOBAL count ip
+        BLOCKS_COUNT_TOTAL_IP=$(( $BLOCKS_COUNT_TOTAL_IP + 1 ))                 # LOCAL count ip
+    fi
 
     # is subnet
     elif [[ $line =~ /[0-9]{1,2}$ ]]; then
