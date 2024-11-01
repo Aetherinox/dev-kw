@@ -30,6 +30,9 @@
 #
 # #
 
+APP_THIS_FILE=$(basename "$0")                          # current script file
+APP_THIS_DIR="${PWD}"                                   # Current script directory
+
 # #
 #   vars > colors
 #
@@ -104,8 +107,6 @@ APP_VER=("1" "0" "0" "0")                               # current script version
 APP_DEBUG=false                                         # debug mode
 APP_REPO="Aetherinox/blocklists"                        # repository
 APP_REPO_BRANCH="main"                                  # repository branch
-APP_THIS_FILE=$(basename "$0")                          # current script file
-APP_THIS_DIR="${PWD}"                                   # Current script directory
 APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
 APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
 COUNT_LINES=0                                           # number of lines in doc
@@ -166,7 +167,7 @@ echo -e " ───────────────────────�
 # #
 
 echo -e
-echo -e "  ⭐ Starting"
+echo -e "  ⭐ Starting script ${GREEN1}${APP_THIS_FILE}${RESET}"
 
 # #
 #   Create or Clean file
@@ -202,6 +203,7 @@ if [ -d .github/blocks/ ]; then
         BLOCKS_COUNT_TOTAL_IP=0
         BLOCKS_COUNT_TOTAL_SUBNET=0
 
+        echo -e "  📊 Fetching statistics for clean file ${ORANGE2}${APP_FILE_TEMP}${RESET}"
         for line in $(cat ${APP_FILE_TEMP}); do
 
             # is ipv6
@@ -323,7 +325,7 @@ echo -e "  🎌 ${GREY2}Finished! ${YELLOW2}${D} days ${H} hrs ${M} mins ${S} se
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-echo -e "  #️⃣  ${BLUE2}${APP_FILE_PERM}${RESET} | Added ${FUCHSIA2}${COUNT_TOTAL_IP} IPs${RESET} and ${FUCHSIA2}${COUNT_TOTAL_SUBNET} Subnets${RESET}"
+echo -e "  #️⃣ ${BLUE2}${APP_FILE_PERM}${RESET} | Added ${FUCHSIA2}${COUNT_TOTAL_IP} IPs${RESET} and ${FUCHSIA2}${COUNT_TOTAL_SUBNET} Subnets${RESET}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 echo -e
 echo -e

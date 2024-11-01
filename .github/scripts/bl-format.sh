@@ -224,7 +224,7 @@ fi
 #   Get IP list
 # #
 
-echo -e "  🌎 Downloading IP blacklist to ${ORANGE1}${APP_FILE_TEMP}${RESET}"
+echo -e "  🌎 Downloading IP blacklist to ${ORANGE2}${APP_FILE_TEMP}${RESET}"
 
 # #
 #   Read stdin
@@ -258,6 +258,7 @@ sed -i '/^\s*$/d' ${APP_FILE_TEMP}                                      # remove
 #   so we will count every IP in the block.
 # #
 
+echo -e "  📊 Fetching statistics for clean file ${ORANGE2}${APP_FILE_TEMP}${RESET}"
 for line in $(cat ${APP_FILE_TEMP}); do
 
     # is ipv6

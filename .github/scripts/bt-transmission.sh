@@ -174,6 +174,13 @@ domain_list=(
 )
 
 # #
+#   Start
+# #
+
+echo -e
+echo -e "  ⭐ Starting script ${GREEN1}${APP_THIS_FILE}${RESET}"
+
+# #
 #	Loop each website above and download the rules
 # #
 

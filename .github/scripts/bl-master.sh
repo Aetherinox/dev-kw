@@ -36,6 +36,9 @@
 #
 # #
 
+APP_THIS_FILE=$(basename "$0")                          # current script file
+APP_THIS_DIR="${PWD}"                                   # Current script directory
+
 # #
 #   vars > colors
 #
@@ -95,7 +98,7 @@ fi
 
 if test "$#" -lt 2; then
     echo -e
-    echo -e "  ⭕  ${YELLOW1}[${APP_THIS_FILE}]${RESET}: Aborting -- did not provide URL arguments"
+    echo -e "  ⭕  ${YELLOW1}[${APP_THIS_FILE}]${RESET}: Aborting -- did not provide URL arguments for ${YELLOW1}${ARG_SAVEFILE}${RESET}"
     echo -e
     exit 0
 fi
@@ -109,8 +112,6 @@ APP_VER=("1" "0" "0" "0")                               # current script version
 APP_DEBUG=false                                         # debug mode
 APP_REPO="Aetherinox/blocklists"                        # repository
 APP_REPO_BRANCH="main"                                  # repository branch
-APP_THIS_FILE=$(basename "$0")                          # current script file
-APP_THIS_DIR="${PWD}"                                   # Current script directory
 APP_OUT=""                                              # each ip fetched from stdin will be stored in this var
 APP_FILE_PERM="${ARG_SAVEFILE}"                         # perm file when building ipset list
 COUNT_LINES=0                                           # number of lines in doc
@@ -167,11 +168,11 @@ echo -e "  ${GREY2}ACTION:      ${APP_THIS_FILE}${RESET}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 
 # #
-#   output
+#   Start
 # #
 
 echo -e
-echo -e "  ⭐ Starting"
+echo -e "  ⭐ Starting script ${GREEN1}${APP_THIS_FILE}${RESET}"
 
 # #
 #   Create or Clean file
@@ -217,6 +218,7 @@ download_list()
     #   so we will count every IP in the block.
     # #
 
+    echo -e "  📊 Fetching statistics for clean file ${ORANGE2}${fnFileTemp}${RESET}"
     for line in $(cat ${fnFileTemp}); do
         # is ipv6
         if [ "$line" != "${line#*:[0-9a-fA-F]}" ]; then
@@ -299,6 +301,7 @@ if [ -d .github/blocks/ ]; then
         BLOCKS_COUNT_TOTAL_IP=0
         BLOCKS_COUNT_TOTAL_SUBNET=0
 
+        echo -e "  📊 Fetching statistics for clean file ${ORANGE2}${APP_FILE_TEMP}${RESET}"
         for line in $(cat ${APP_FILE_TEMP}); do
 
             # is ipv6
@@ -370,15 +373,15 @@ rm ${APP_FILE_PERM}.sort
 #   Format Counts
 # #
 
-COUNT_LINES=$(wc -l < ${APP_FILE_PERM})                                 # count ip lines
-COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                              # GLOBAL add commas to thousands
+COUNT_LINES=$(wc -l < ${APP_FILE_PERM})                                     # count ip lines
+COUNT_LINES=$(printf "%'d" "$COUNT_LINES")                                  # GLOBAL add commas to thousands
 
 # #
 #   Format count totals since we no longer need to add
 # #
 
-COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")                        # GLOBAL add commas to thousands
-COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                # GLOBAL add commas to thousands
+COUNT_TOTAL_IP=$(printf "%'d" "$COUNT_TOTAL_IP")                            # GLOBAL add commas to thousands
+COUNT_TOTAL_SUBNET=$(printf "%'d" "$COUNT_TOTAL_SUBNET")                    # GLOBAL add commas to thousands
 
 # #
 #   ed
@@ -428,7 +431,7 @@ echo -e "  🎌 ${GREY2}Finished! ${YELLOW2}${D} days ${H} hrs ${M} mins ${S} se
 
 echo -e
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
-echo -e "  #️⃣  ${BLUE2}${APP_FILE_PERM}${RESET} | Added ${FUCHSIA2}${COUNT_TOTAL_IP} IPs${RESET} and ${FUCHSIA2}${COUNT_TOTAL_SUBNET} Subnets${RESET}"
+echo -e "  #️⃣ ${BLUE2}${APP_FILE_PERM}${RESET} | Added ${FUCHSIA2}${COUNT_TOTAL_IP} IPs${RESET} and ${FUCHSIA2}${COUNT_TOTAL_SUBNET} Subnets${RESET}"
 echo -e " ──────────────────────────────────────────────────────────────────────────────────────────────"
 echo -e
 echo -e

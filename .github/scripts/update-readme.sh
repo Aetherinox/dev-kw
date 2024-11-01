@@ -164,6 +164,13 @@ if [[ -z "${ARG1}" ]]; then
 fi
 
 # #
+#   Start
+# #
+
+echo -e
+echo -e "  ⭐ Starting script ${GREEN1}${APP_THIS_FILE}${RESET}"
+
+# #
 #   README > Set Sync Time
 # #
 
