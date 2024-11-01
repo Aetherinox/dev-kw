@@ -356,6 +356,57 @@ jobs:
                   eval "./$run_forums"
 
             # #
+            #   Generate > Spam
+            # #
+
+            - name: "🧱 Generate › ISP"
+              id: task_blocklist_generate_isp
+              run: |
+                  # ISP › AOL
+                  run_isp_aol=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_aol.ipset http://list.iblocklist.com/?list=toboaiysofkflwgrttmb"
+                  eval "./$run_isp_aol"
+
+                  # ISP › ATT
+                  run_isp_att=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_att.ipset http://list.iblocklist.com/?list=grbtkzijgrowvobvessf"
+                  eval "./$run_isp_att"
+
+                  # ISP › Cablevision
+                  run_isp_cablevision=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_cablevision.ipset http://list.iblocklist.com/?list=dwwbsmzirrykdlvpqozb"
+                  eval "./$run_isp_cablevision"
+
+                  # ISP › Charter
+                  run_isp_charter=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_charter.ipset http://list.iblocklist.com/?list=htnzojgossawhpkbulqw"
+                  eval "./$run_isp_charter"
+
+                  # ISP › Comcast
+                  run_isp_comcast=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_comcast.ipset http://list.iblocklist.com/?list=rsgyxvuklicibautguia"
+                  eval "./$run_isp_comcast"
+
+                  # ISP › Embarq
+                  run_isp_embarq=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_embarq.ipset http://list.iblocklist.com/?list=twdblifaysaqtypevvdp"
+                  eval "./$run_isp_embarq"
+
+                  # ISP › Qwest
+                  run_isp_qwest=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_qwest.ipset http://list.iblocklist.com/?list=jezlifrpefawuoawnfez"
+                  eval "./$run_isp_qwest"
+
+                  # ISP › Sprint
+                  run_isp_sprint=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_sprint.ipset http://list.iblocklist.com/?list=hngtqrhhuadlceqxbrob"
+                  eval "./$run_isp_sprint"
+
+                  # ISP › Suddenlink / Optiumum
+                  run_isp_suddenlink_optimum=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_suddenlink_optimum.ipset http://list.iblocklist.com/?list=psaoblrwylfrdsspfuiq"
+                  eval "./$run_isp_suddenlink_optimum"
+
+                  # ISP › Time Warner Cable
+                  run_isp_time_warner_cable=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_time_warner_cable.ipset http://list.iblocklist.com/?list=aqtsnttnqmcucwrjmohd"
+                  eval "./$run_isp_time_warner_cable"
+
+                  # ISP › Verizon
+                  run_isp_verizon=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_verizon.ipset http://list.iblocklist.com/?list=cdmdbprvldivlqsaqjol"
+                  eval "./$run_isp_verizon"
+
+            # #
             #   Generate > Geographical > Geolite2
             #
             #   only updated once per day (at 1am UTC)
