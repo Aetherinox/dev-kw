@@ -363,7 +363,7 @@ jobs:
               id: task_blocklist_generate_isp
               run: |
                   # ISP › AOL
-                  run_isp_aol=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_aol.ipset http://list.iblocklist.com/?list=toboaiysofkflwgrttmb"
+                  run_isp_aol=".github/scripts/bl-block.sh blocklists/isp/isp_aol.ipset isp/aol.ipset"
                   eval "./$run_isp_aol"
 
                   # ISP › ATT
@@ -395,7 +395,7 @@ jobs:
                   eval "./$run_isp_sprint"
 
                   # ISP › Suddenlink / Optiumum
-                  run_isp_suddenlink_optimum=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_suddenlink_optimum.ipset http://list.iblocklist.com/?list=psaoblrwylfrdsspfuiq"
+                  run_isp_suddenlink_optimum=".github/scripts/bl-json.sh blocklists/isp/isp_suddenlink_optimum.ipset https://ip.guide/AS19108 '.routes | .v4//empty,.v6//empty | .[]'"
                   eval "./$run_isp_suddenlink_optimum"
 
                   # ISP › Time Warner Cable
