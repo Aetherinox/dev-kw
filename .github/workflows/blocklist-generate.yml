@@ -354,7 +354,7 @@ jobs:
               if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
               run: |
                   chmod +x ".github/scripts/bl-plain.sh"
-                  run_forums=".github/scripts/bl-plain.sh blocklists/spam_forums.ipset ${{ secrets.API_03_SPAM_FORUMS_URL }}"
+                  run_forums=".github/scripts/bl-plain.sh blocklists/spam/spam_forums.ipset ${{ secrets.API_03_SPAM_FORUMS_URL }}"
                   eval "./$run_forums"
 
             # #
@@ -362,6 +362,14 @@ jobs:
             #
             #   @resources      https://ftp.arin.net/info/asn.txt
             #                   https://networksdb.io
+            #                   https://rapidapi.com
+            #                   https://ip.guide/
+            #                   https://2ip.io
+            #                   https://ip2location.com
+            #                   https://ipqualityscore.com
+            #                   https://ipinfo.io
+            #                   https://radb.net
+            #                   https://bgpview.io
             #   @info           script on another server is responsible for ensuring this workflow list is kept up to date with the correct ASN.
             #                   we use numerous resources to compare ASNs to see which ones are active and which ones have been migrated.
             # #
@@ -381,9 +389,13 @@ jobs:
                   run_isp_cablevision=".github/scripts/bl-whois.sh blocklists/isp/isp_cablevision.ipset AS6128 AS13490 AS19720"
                   eval "./$run_isp_cablevision"
 
-                  # ISP › Suddenlink / Optiumum
-                  run_isp_suddenlink_optimum=".github/scripts/bl-json.sh blocklists/isp/isp_suddenlink_optimum.ipset https://ip.guide/AS19108 '.routes | .v4//empty,.v6//empty | .[]'"
+                  # ISP › Suddenlink / Altice / Optiumum
+                  run_isp_suddenlink_optimum=".github/scripts/bl-json.sh blocklists/isp/isp_suddenlink_altice_optimum.ipset https://ip.guide/AS19108 '.routes | .v4//empty,.v6//empty | .[]'"
                   eval "./$run_isp_suddenlink_optimum"
+
+                  # ISP › Frontier Communications | https://networksdb.io/ip-addresses-of/cox-communications-inc
+                  run_isp_frontier=".github/scripts/bl-whois.sh blocklists/isp/isp_frontier_communications.ipset AS3593 AS5650 AS7011 AS26127 AS30064 AS32587"
+                  eval "./$run_isp_frontier"
 
                   # ISP › Charter & Spectrum (Previously Time Warner Cable)
                   run_isp_charter_spectrum=".github/scripts/bl-whois.sh blocklists/isp/isp_charter_spectrum_timewarnercable.ipset AS7843 AS11351 AS12271 AS20001 AS20115 AS3456 AS63365"
@@ -413,6 +425,10 @@ jobs:
                   run_isp_cox=".github/scripts/bl-whois.sh blocklists/isp/isp_cox_communications.ipset AS31771 AS22773 AS13432 AS6298 AS12064 AS13493 AS15218 AS22318 AS25904 AS26204"
                   eval "./$run_isp_cox"
 
+                  # ISP › SpaceX Starlink
+                  run_isp_starlink=".github/scripts/bl-whois.sh blocklists/isp/isp_spacex_starlink.ipset AS14593 AS36492 AS397763 AS27277 AS142475"
+                  eval "./$run_isp_starlink"
+
             # #
             #   Generate > Geographical > Geolite2
             #
@@ -421,6 +437,7 @@ jobs:
 
             - name: "🧱 Geographical › GeoLite2 (1/day)"
               id: task_blocklist_geographical_generate_geolite2
+              if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
               run: |
                   chmod +x ".github/scripts/bl-geolite2.sh"
                   run_geolite2=".github/scripts/bl-geolite2.sh -l ${{ secrets.API_GEOLITE2_KEY }}"
