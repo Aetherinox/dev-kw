@@ -44,7 +44,8 @@
 # #
 
 APP_THIS_FILE=$(basename "$0")                          # current script file
-APP_THIS_DIR="${PWD}"                                   # Current script directory
+APP_THIS_DIR="${PWD}"                                   # current script directory
+APP_GITHUB_DIR="${APP_THIS_DIR}/.github"                # .github folder
 
 # #
 #   vars > colors
@@ -1830,6 +1831,23 @@ function main()
 
     CONFIG_LOAD
     MAP_BUILD
+
+    # #
+    #   @TODO       add caching for associative array
+    # #
+
+    declare -p MAP_CONTINENT > ${APP_THIS_DIR}/MAP_CONTINENT.cache
+    declare -p MAP_COUNTRY > ${APP_THIS_DIR}/MAP_COUNTRY.cache
+
+    if [[ $APP_DEBUG == "true" ]]; then
+        for KEY in "${!MAP_CONTINENT[@]}"; do
+            printf "%s --> %s\n" "$KEY" "${MAP_CONTINENT[$KEY]}"
+        done | tee "${APP_GITHUB_DIR}/.logs/MAP_CONTINENT.log"
+
+        for KEY in "${!MAP_COUNTRY[@]}"; do
+            printf "%s --> %s\n" "$KEY" "${MAP_COUNTRY[$KEY]}"
+        done | tee "${APP_GITHUB_DIR}/.logs/MAP_COUNTRY.log"
+    fi
 
     # #
     #   place set output in current working directory

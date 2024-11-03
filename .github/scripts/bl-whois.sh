@@ -43,7 +43,8 @@
 # #
 
 APP_THIS_FILE=$(basename "$0")                          # current script file
-APP_THIS_DIR="${PWD}"                                   # Current script directory
+APP_THIS_DIR="${PWD}"                                   # current script directory
+APP_GITHUB_DIR="${APP_THIS_DIR}/.github"                # .github folder
 
 # #
 #   vars > colors
@@ -144,10 +145,6 @@ for arg in "${@:1}"; do
 done
 
 ARG_SAVEFILE=$1
-
-echo -e "Save File .... ${ARG_SAVEFILE}"
-echo -e "Service ...... ${ARG_WHOIS_SERVICE}"
-echo -e "Grep ......... ${ARG_GREP_FILTER}"
 
 # #
 #   Arguments > Validate
