@@ -41,7 +41,28 @@ run-name: "🧱 Blocklist › Generate"
 # #
 
 on:
+
+    # #
+    #   Trigger > Workflow Dispatch
+    # #
+
     workflow_dispatch:
+      inputs:
+
+        # #
+        #   true:     runs all actions, even ones not scheduled
+        #   false:    only scheduled tasks will run
+        # #
+  
+        RUN_ALL_ACTIONS:
+          description:  "📑 Run All Actions"
+          required:     true
+          default:      false
+          type:         boolean
+
+    # #
+    #   Trigger > Cron Schedule
+    # #
 
     schedule:
         - cron: '0 0,6,12,18 * * *'
@@ -351,7 +372,7 @@ jobs:
 
             - name: "🧱 Generate › Spam › Forums (1/day)"
               id: task_blocklist_spam_generate_forums
-              if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
+              if: (github.event_name == 'schedule' && github.event.schedule == '0 2 * * *') || inputs.RUN_ALL_ACTIONS
               run: |
                   chmod +x ".github/scripts/bl-plain.sh"
                   run_forums=".github/scripts/bl-plain.sh blocklists/spam/spam_forums.ipset ${{ secrets.API_03_SPAM_FORUMS_URL }}"
@@ -437,7 +458,7 @@ jobs:
 
             - name: "🧱 Geographical › GeoLite2 (1/day)"
               id: task_blocklist_geographical_generate_geolite2
-              if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
+              if: (github.event_name == 'schedule' && github.event.schedule == '0 2 * * *') || inputs.RUN_ALL_ACTIONS
               run: |
                   chmod +x ".github/scripts/bl-geolite2.sh"
                   run_geolite2=".github/scripts/bl-geolite2.sh -l ${{ secrets.API_GEOLITE2_KEY }}"
