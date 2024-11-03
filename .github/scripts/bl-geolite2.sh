@@ -116,7 +116,8 @@ APP_TARGET_DIR="blocklists/country/geolite"                         # path to sa
 APP_TARGET_EXT_TMP="tmp"                                            # temp extension for ipsets before work is done
 APP_TARGET_EXT_PROD="ipset"                                         # extension for ipsets
 APP_SOURCE_LOCAL_ENABLED=false                                      # True = loads from ./local, False = download from MaxMind
-APP_SOURCE_LOCAL="local"                                            # where to fetch local csv from if local mode enabled
+APP_SOURCE_LOCAL="local"                                            # local mode enabled: where to fetch local csv from
+APP_SOURCE_TEMP=".temp"                                             # local mode disabled: where csv will be downloaded to
 APP_DIR_IPV4="./${APP_TARGET_DIR}/ipv4"                             # folder to store ipv4
 APP_DIR_IPV6="./${APP_TARGET_DIR}/ipv6"                             # folder to store ipv6
 APP_GEO_LOCS_CSV="GeoLite2-Country-Locations-en.csv"                # Geolite2 Country Locations CSV 
@@ -1266,6 +1267,9 @@ function GARBAGE()
         echo -e "  🗑️  Cleanup ${APP_DIR_IPV6}"
        rm -rf ${APP_DIR_IPV6}
     fi
+
+    # remove temp
+    rm -rf "${APP_GITHUB_DIR}/${APP_SOURCE_TEMP}"
 }
 
 # #
@@ -1813,9 +1817,11 @@ function main()
 
     CHECK_PACKAGES
     if [[ $APP_SOURCE_LOCAL_ENABLED == "false" ]]; then
-        export TEMPDIR=$(mktemp --directory)
+       # export TEMPDIR=$(mktemp --directory "${APP_GITHUB_DIR}/${APP_SOURCE_TEMP}")
+        mkdir -p "${APP_GITHUB_DIR}/${APP_SOURCE_TEMP}"
+        export TEMPDIR="${APP_GITHUB_DIR}/${APP_SOURCE_TEMP}"
     else
-        export TEMPDIR="${APP_THIS_DIR}/${APP_SOURCE_LOCAL}"
+        export TEMPDIR="${APP_GITHUB_DIR}/${APP_SOURCE_LOCAL}"
     fi
 
     # #

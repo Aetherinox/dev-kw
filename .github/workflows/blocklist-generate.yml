@@ -375,7 +375,7 @@ jobs:
               if: (github.event_name == 'schedule' && github.event.schedule == '0 2 * * *') || inputs.RUN_ALL_ACTIONS
               run: |
                   chmod +x ".github/scripts/bl-plain.sh"
-                  run_forums=".github/scripts/bl-plain.sh blocklists/spam/spam_forums.ipset ${{ secrets.API_03_SPAM_FORUMS_URL }}"
+                  run_forums=".github/scripts/bl-plain.sh blocklists/spam/spam_forums.ipset https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/stopforumspam_7d.ipset"
                   eval "./$run_forums"
 
             # #
@@ -451,14 +451,36 @@ jobs:
                   eval "./$run_isp_starlink"
 
             # #
-            #   Generate > Geographical > Geolite2
+            #   Generate > Geographical > Geolite2 > Setup
             #
             #   only updated once per day (at 1am UTC)
             # #
 
+            - name: "🧱 Geographical › GeoLite2 (Setup)"
+              id: task_blocklist_geographical_generate_setup
+              if: (github.event_name == 'schedule' && github.event.schedule == '0 2 * * *') || inputs.RUN_ALL_ACTIONS
+              run: |
+                  echo "year_week=$(date +'%Y_%U')" >> $GITHUB_ENV
+
+            # #
+            #   Generate > Geographical > Geolite2 > Cache
+            # #
+
+            - name: "🧱 Geographical › GeoLite2 (Cache)"
+              id: task_blocklist_geographical_generate_cache
+              uses: actions/cache@v4
+              if: steps.task_blocklist_geographical_generate_setup.outcome == 'success'
+              with:
+                  path: .github/.temp
+                  key: ${{ runner.os }}-infer-${{ env.year_week }}
+
+            # #
+            #   Generate > Geographical > Geolite2 > Build
+            # #
+
             - name: "🧱 Geographical › GeoLite2 (1/day)"
               id: task_blocklist_geographical_generate_geolite2
-              if: (github.event_name == 'schedule' && github.event.schedule == '0 2 * * *') || inputs.RUN_ALL_ACTIONS
+              if: steps.task_blocklist_geographical_generate_setup.outcome == 'success'
               run: |
                   chmod +x ".github/scripts/bl-geolite2.sh"
                   run_geolite2=".github/scripts/bl-geolite2.sh -l ${{ secrets.API_GEOLITE2_KEY }}"
