@@ -237,7 +237,7 @@ echo -e "  🌎 Downloading IP blacklist to ${ORANGE1}${APP_FILE_TEMP}${RESET}"
 #   Get IP list
 # #
 
-jsonOutput=$(curl -sSL -A "${APP_AGENT}" ${ARG_JSON_URL} | jq -r "${ARG_JSON_QRY}" | grep -vi "^#|^;|^$" | awk '{if (++dup[$0] == 1) print $0;}' | sort_results > ${APP_FILE_TEMP})
+APP_OUT=$(curl -sSL -A "${APP_AGENT}" ${ARG_JSON_URL} | jq -r "${ARG_JSON_QRY}" | grep -vi "^#|^;|^$" | awk '{if (++dup[$0] == 1) print $0;}' | sort_results > ${APP_FILE_TEMP})
 sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${APP_FILE_TEMP}                 # remove # and ; comments
 sed -i 's/\-.*//' ${APP_FILE_TEMP}                                      # remove hyphens for ip ranges
 sed -i 's/[[:blank:]]*$//' ${APP_FILE_TEMP}                             # remove space / tab from EOL

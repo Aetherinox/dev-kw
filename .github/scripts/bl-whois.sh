@@ -4,28 +4,39 @@
 #   @for                https://github.com/Aetherinox/csf-firewall
 #   @workflow           blocklist-generate.yml
 #   @type               bash script
-#   @summary            generate ipset from json formatted web url. requires url and jq query | URLs: SINGLE
-#                       uses a URL to fetch JSON from a website, then formats that JSON so that there is one IP per line.
+#   @summary            utilizes various whois services and allows you to fetch a list of IP addresses associated with an ASN.
 #   
-#   @terminal           .github/scripts/bl-json.sh \
-#                           blocklists/02_privacy_google.ipset
-#                           https://developers.google.com/search/apis/ipranges/googlebot.json \
-#                           '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'
+#   @terminal           .github/scripts/bl-whois.sh \
+#                           blocklists/privacy/privacy_facebook.ipset
+#                           AS32934
 #
-#   @workflow           # Privacy › Google
-#                       chmod +x ".github/scripts/bl-json.sh"
-#                       run_google=".github/scripts/bl-json.sh 02_privacy_google.ipset https://developers.google.com/search/apis/ipranges/googlebot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'"
-#                       eval "./$run_google"
+#                       .github/scripts/bl-whois.sh \
+#                           blocklists/privacy/privacy_facebook.ipset
+#                           AS32934 \
+#                           whois.radb.net
 #
-#   @command            bl-json.sh
-#                           <ARG_SAVEFILE>
-#                           <ARG_JSON_URL>
-#                           <ARG_JSON_QRY>
-#                       bl-json.sh 02_privacy_google.ipset https://api.domain.lan/googlebot.json '.prefixes | .[] |.ipv4Prefix//empty,.ipv6Prefix//empty'
+#                       .github/scripts/bl-whois.sh \
+#                           blocklists/privacy/privacy_facebook.ipset
+#                           AS32934 \
+#                           whois.radb.net \
+#                           '#|^;|^$'
+#
+#   @workflow           # Privacy › Facebook
+#                       chmod +x ".github/scripts/bl-whois.sh"
+#                       run_facebook=".github/scripts/bl-whois.sh blocklists/privacy/privacy_facebook.ipset AS32934"
+#                       eval "./$run_facebook"
+#
+#   @command            bl-whois.sh
+#                           <ARG_SAVEFILE>              required
+#                           <ARG_ASN>                   required
+#                           <ARG_WHOIS_SERVICE>         optional
+#                           <ARG_GREP_FILTER>           optional
+#
+#                       bl-whois.sh blocklists/privacy/privacy_facebook.ipset AS32934 whois.radb.net '#|^;|^$'
 #
 #                       📁 .github
 #                           📁 scripts
-#                               📄 bl-json.sh
+#                               📄 bl-whois.sh
 #                           📁 workflows
 #                               📄 blocklist-generate.yml
 #
@@ -109,13 +120,14 @@ sort_results()
 #   This bash script has the following arguments:
 #
 #       ARG_SAVEFILE        (str)       file to save IP addresses into
-#       ARG_JSON_URL        (str)       direct url to json file to download
+#       ARG_ASN             (str)       ASN to look up for whois
 #       ARG_JSON_QRY        (str)       jq rules which pull the needed ip addresses
 # #
 
 ARG_SAVEFILE=$1
-ARG_JSON_URL=$2
-ARG_JSON_QRY=$3
+ARG_ASN=$2
+ARG_WHOIS_SERVICE=$3
+ARG_GREP_FILTER=$4
 
 # #
 #   Arguments > Validate
@@ -128,16 +140,29 @@ if [[ -z "${ARG_SAVEFILE}" ]]; then
     exit 0
 fi
 
-if [[ -z "${ARG_JSON_URL}" ]] || [[ ! $ARG_JSON_URL =~ $REGEX_URL ]]; then
-    echo -e "  ⭕ ${YELLOW1}[${APP_THIS_FILE}]${RESET}: Invalid URL specified for ${YELLOW1}${ARG_SAVEFILE}${RESET}"
+if [[ -z "${ARG_ASN}" ]]; then
+    echo -e "  ⭕ ${YELLOW1}[${APP_THIS_FILE}]${RESET}: Invalid ASN specified for ${YELLOW1}${ARG_SAVEFILE}${RESET}"
     echo -e
     exit 1
 fi
 
-if [[ -z "${ARG_JSON_QRY}" ]]; then
-    echo -e "  ⭕ ${YELLOW1}[${APP_THIS_FILE}]${RESET}: No valid jq query specified for ${YELLOW1}${ARG_SAVEFILE}${RESET}"
-    echo -e
-    exit 1
+# #
+#   No whois service specified, set to default
+#       
+# #
+
+if [[ -z "${ARG_WHOIS_SERVICE}" ]]; then
+    ARG_WHOIS_SERVICE="whois.radb.net"
+fi
+
+# #
+#   Grep search pattern not provided, ignore comments and blank lines.
+#   this is already done in the step before this grep exclude pattern is ran, but
+#   we need a default grep pattern if one is not provided.
+# #
+
+if [[ -z "${ARG_GREP_FILTER}" ]]; then
+    ARG_GREP_FILTER="^#|^;|^$"
 fi
 
 # #
@@ -237,11 +262,7 @@ echo -e "  🌎 Downloading IP blacklist to ${ORANGE1}${APP_FILE_TEMP}${RESET}"
 #   Get IP list
 # #
 
-jsonOutput=$(curl -sSL -A "${APP_AGENT}" ${ARG_JSON_URL} | jq -r "${ARG_JSON_QRY}" | grep -vi "^#|^;|^$" | awk '{if (++dup[$0] == 1) print $0;}' | sort_results > ${APP_FILE_TEMP})
-sed -i '/[#;]/{s/#.*//;s/;.*//;/^$/d}' ${APP_FILE_TEMP}                 # remove # and ; comments
-sed -i 's/\-.*//' ${APP_FILE_TEMP}                                      # remove hyphens for ip ranges
-sed -i 's/[[:blank:]]*$//' ${APP_FILE_TEMP}                             # remove space / tab from EOL
-sed -i '/^\s*$/d' ${APP_FILE_TEMP}                                      # remove empty lines
+APP_OUT=$(whois -h ${ARG_WHOIS_SERVICE} -- "-i origin ${ARG_ASN}" | grep ^route | awk '{gsub("(route:|route6:)","");print}' | awk '{gsub(/ /,""); print}' | grep -vi "^#|^;|^$" | grep -vi "${ARG_GREP_FILTER}" | awk '{if (++dup[$0] == 1) print $0;}' | sort_results > ${APP_FILE_TEMP})
 
 # #
 #   calculate how many IPs are in a subnet

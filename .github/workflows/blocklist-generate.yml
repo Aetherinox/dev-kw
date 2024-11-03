@@ -165,6 +165,7 @@ jobs:
                   chmod +x ".github/scripts/bl-json.sh"
                   chmod +x ".github/scripts/bl-plain.sh"
                   chmod +x ".github/scripts/bl-spf.sh"
+                  chmod +x ".github/scripts/bl-whois.sh"
                   chmod +x ".github/scripts/bt-transmission.sh"
                   chmod +x ".github/scripts/update-readme.sh"
                   chmod +x ".github/scripts/tool-range-iprange.sh"
