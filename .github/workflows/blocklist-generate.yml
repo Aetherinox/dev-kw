@@ -340,7 +340,7 @@ jobs:
             - name: "🧱 Generate › Spam"
               id: task_blocklist_generate_spam
               run: |
-                  run_spamhaus=".github/scripts/bl-plain.sh blocklists/spam_spamhaus.ipset ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
+                  run_spamhaus=".github/scripts/bl-plain.sh blocklists/spam/spam_spamhaus.ipset ${{ secrets.API_03_SPAM_SPAMHAUS_URL }}"
                   eval "./$run_spamhaus"
 
             # #
@@ -358,7 +358,12 @@ jobs:
                   eval "./$run_forums"
 
             # #
-            #   Generate > Spam
+            #   Generate > Internet Service Provider
+            #
+            #   @resources      https://ftp.arin.net/info/asn.txt
+            #                   https://networksdb.io
+            #   @info           script on another server is responsible for ensuring this workflow list is kept up to date with the correct ASN.
+            #                   we use numerous resources to compare ASNs to see which ones are active and which ones have been migrated.
             # #
 
             - name: "🧱 Generate › ISP"
@@ -372,41 +377,41 @@ jobs:
                   run_isp_att=".github/scripts/bl-whois.sh blocklists/isp/isp_att.ipset AS7018"
                   eval "./$run_isp_att"
 
-                  # ISP › Cablevision
-                  run_isp_cablevision=".github/scripts/bl-whois.sh blocklists/isp/isp_cablevision.ipset AS6128"
+                  # ISP › Cablevision | Later merged with Suddenlink
+                  run_isp_cablevision=".github/scripts/bl-whois.sh blocklists/isp/isp_cablevision.ipset AS6128 AS13490 AS19720"
                   eval "./$run_isp_cablevision"
-
-                  # ISP › Charter & Spectrum
-                  run_isp_charter_spectrum=".github/scripts/bl-whois.sh blocklists/isp/isp_charter_spectrum.ipset AS20115"
-                  eval "./$run_isp_charter_spectrum"
-
-                  # ISP › Comcast
-                  run_isp_comcast=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_comcast.ipset http://list.iblocklist.com/?list=rsgyxvuklicibautguia"
-                  eval "./$run_isp_comcast"
-
-                  # ISP › Embarq
-                  run_isp_embarq=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_embarq.ipset http://list.iblocklist.com/?list=twdblifaysaqtypevvdp"
-                  eval "./$run_isp_embarq"
-
-                  # ISP › Qwest
-                  run_isp_qwest=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_qwest.ipset http://list.iblocklist.com/?list=jezlifrpefawuoawnfez"
-                  eval "./$run_isp_qwest"
-
-                  # ISP › Sprint
-                  run_isp_sprint=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_sprint.ipset http://list.iblocklist.com/?list=hngtqrhhuadlceqxbrob"
-                  eval "./$run_isp_sprint"
 
                   # ISP › Suddenlink / Optiumum
                   run_isp_suddenlink_optimum=".github/scripts/bl-json.sh blocklists/isp/isp_suddenlink_optimum.ipset https://ip.guide/AS19108 '.routes | .v4//empty,.v6//empty | .[]'"
                   eval "./$run_isp_suddenlink_optimum"
 
-                  # ISP › Time Warner Cable
-                  run_isp_time_warner_cable=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_time_warner_cable.ipset http://list.iblocklist.com/?list=aqtsnttnqmcucwrjmohd"
-                  eval "./$run_isp_time_warner_cable"
+                  # ISP › Charter & Spectrum (Previously Time Warner Cable)
+                  run_isp_charter_spectrum=".github/scripts/bl-whois.sh blocklists/isp/isp_charter_spectrum_timewarnercable.ipset AS7843 AS11351 AS12271 AS20001 AS20115 AS3456 AS63365"
+                  eval "./$run_isp_charter_spectrum"
 
-                  # ISP › Verizon
-                  run_isp_verizon=".github/scripts/tool-range-iprange.sh blocklists/isp/isp_verizon.ipset http://list.iblocklist.com/?list=cdmdbprvldivlqsaqjol"
+                  # ISP › Comcast
+                  run_isp_comcast=".github/scripts/bl-whois.sh blocklists/isp/isp_comcast.ipset AS7922 AS7015 AS36732 AS36196 AS33651 AS33650 AS33542 AS33491 AS33490 AS33489 AS33351 AS33287 AS23266 AS23253 AS22909 AS22258 AS21508 AS20214 AS16748 AS14668 AS14042 AS13385 AS13367 AS11025"
+                  eval "./$run_isp_comcast"
+
+                  # ISP › Embarq
+                  run_isp_embarq=".github/scripts/bl-whois.sh blocklists/isp/isp_embarq.ipset AS22186 AS32855 AS2379 AS3447 AS4212 AS5778 AS6222 AS6367 AS11398 AS11530 AS13787 AS14905 AS14910 AS14921 AS16718 AS17402 AS18494 AS22186 AS32855"
+                  eval "./$run_isp_embarq"
+
+                  # ISP › Qwest
+                  run_isp_qwest=".github/scripts/bl-whois.sh blocklists/isp/isp_qwest.ipset AS3908 AS3909 AS3910 AS3951 AS4015 AS4911 AS6225 AS6226 AS6227 AS394190"
+                  eval "./$run_isp_qwest"
+
+                  # ISP › Sprint
+                  run_isp_sprint=".github/scripts/bl-whois.sh blocklists/isp/isp_sprint.ipset AS1239 AS150389 AS1789 AS1790 AS1791 AS1792 AS1793 AS1794 AS1795 AS197226 AS2014 AS2050 AS2053 AS206963 AS21288 AS2938 AS2942 AS2959 AS2981 AS3647 AS3648 AS3649 AS3650 AS3651 AS3652"
+                  eval "./$run_isp_sprint"
+
+                  # ISP › Verizon | https://networksdb.io/search/org/verizon
+                  run_isp_verizon=".github/scripts/bl-whois.sh blocklists/isp/isp_verizon.ipset AS701 AS702 AS1321 AS2125 AS7021 AS8385 AS6066 AS6167 AS9055 AS12367 AS22521"
                   eval "./$run_isp_verizon"
+
+                  # ISP › Cox Communications | https://networksdb.io/ip-addresses-of/cox-communications-inc
+                  run_isp_cox=".github/scripts/bl-whois.sh blocklists/isp/isp_cox_communications.ipset AS31771 AS22773 AS13432 AS6298 AS12064 AS13493 AS15218 AS22318 AS25904 AS26204"
+                  eval "./$run_isp_cox"
 
             # #
             #   Generate > Geographical > Geolite2
