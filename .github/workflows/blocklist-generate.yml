@@ -453,17 +453,33 @@ jobs:
             # #
             #   Generate > Geographical > Geolite2 > Setup
             #
-            #   only updated once per day (at 1am UTC)
+            #   this step should only be ran once per day (at 1am UTC).
+            #   The vars defined below are used for caching. The current day of the year + year are calculated, this allows
+            #   the same cached files to be used in a 24 hour period. When the day of the year changes, a new set of geo files will
+            #   be updated.
+            #
+            #   CACHE VARS:           year_week       outputs the current week of the year, and year
+            #                                         51_2024
+            #
+            #                         year_day        outputs the current day of the year, and year
+            #                                         308_2024
             # #
 
             - name: "🧱 Geographical › GeoLite2 (Setup)"
               id: task_blocklist_geographical_generate_setup
-              if: (github.event_name == 'schedule' && github.event.schedule == '0 2 * * *') || inputs.RUN_ALL_ACTIONS
+              if: (github.event_name == 'schedule' && github.event.schedule == '0 2 * * *') || ( github.event_name == 'workflow_dispatch' && inputs.RUN_ALL_ACTIONS == 'true' )
               run: |
-                  echo "year_week=$(date +'%Y_%U')" >> $GITHUB_ENV
+                  echo "year_week=$(date +'%U_%Y')" >> $GITHUB_ENV
+                  echo "year_day=$(date +'%j_%Y')" >> $GITHUB_ENV
 
             # #
             #   Generate > Geographical > Geolite2 > Cache
+            #
+            #   uses the same cache in a 24 hour period.
+            #
+            #   @output               cache-hit
+            #                         only run step if cache hit found
+            #                         if: steps.task_blocklist_geographical_generate_cache.outputs.cache-hit == 'true'
             # #
 
             - name: "🧱 Geographical › GeoLite2 (Cache)"
@@ -472,7 +488,7 @@ jobs:
               if: steps.task_blocklist_geographical_generate_setup.outcome == 'success'
               with:
                   path: .github/.temp
-                  key: ${{ runner.os }}-infer-${{ env.year_week }}
+                  key: cache-${{ runner.os }}-geolite2-${{ env.year_week }}
 
             # #
             #   Generate > Geographical > Geolite2 > Build
