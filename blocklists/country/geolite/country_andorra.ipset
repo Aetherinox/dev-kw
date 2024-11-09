@@ -5,7 +5,7 @@
 #   @source         http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country-CSV.zip
 #   @id             country_andorra_ipset
 #   @uuid           41aa7540-c884-31b0-a452-7d9653a74b5e
-#   @updated        Fri 08 Nov 2024 02:32:21 AM UTC
+#   @updated        Sat 09 Nov 2024 02:28:13 AM UTC
 #   @entries        66,839 ips
 #                   317 subnets
 #                   317 lines
