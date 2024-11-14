@@ -5,7 +5,7 @@
 #   @source         http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country-CSV.zip
 #   @id             country_iceland_ipset
 #   @uuid           02608517-a80d-312e-ac6d-a62e1e3c7ab1
-#   @updated        Wed 13 Nov 2024 02:28:37 AM UTC
+#   @updated        Thu 14 Nov 2024 02:29:54 AM UTC
 #   @entries        915,457 ips
 #                   1,434 subnets
 #                   1,434 lines
